@@ -1,0 +1,14 @@
+services:
+  postgre:
+    image: postgres:17.9
+    container_name: flashsale-db
+    environment:
+      POSTGRES_DB: flashsale
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+volumes:
+  postgres_data:
