@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hthien.flash_sale.dto.request.CreateProductRequest;
+import com.hthien.flash_sale.dto.request.ResetStockRequest;
 import com.hthien.flash_sale.dto.response.ProductRespone;
 import com.hthien.flash_sale.service.ProductService;
 
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+
 
 
 @RestController
@@ -35,11 +37,20 @@ public class ProductController {
         return productService.createProduct(request);
     }
 
-    @GetMapping("/{id")
+    @GetMapping("/{id}")
     @Operation(summary = "Get product with current stock")
     public ProductRespone getProduct(
         @PathVariable Long id
     ){
         return productService.getProduct(id);
+    }
+
+    @PostMapping("/{id}/inventory/reset")
+    @Operation(summary = "Reset product stock (for re-running simulations)")
+    public ProductRespone resetStock(
+        @PathVariable Long id,
+        @Valid @RequestBody ResetStockRequest request
+    ){
+        return productService.resetStock(id, request);
     }
 }

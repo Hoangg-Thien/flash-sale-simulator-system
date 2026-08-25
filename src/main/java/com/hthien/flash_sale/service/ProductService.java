@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hthien.flash_sale.dto.request.CreateProductRequest;
+import com.hthien.flash_sale.dto.request.ResetStockRequest;
 import com.hthien.flash_sale.dto.response.ProductRespone;
 import com.hthien.flash_sale.entity.Inventory;
 import com.hthien.flash_sale.entity.Product;
@@ -48,11 +49,29 @@ public class ProductService {
     public ProductRespone getProduct(Long productId){
 
         Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new ProductNotFoundException(productId));
+        .orElseThrow(() -> new ProductNotFoundException(productId));
             
         Inventory inventory = inventoryRepository.findByProductId(productId)
-            .orElseThrow(() -> new ProductNotFoundException(productId));
+        .orElseThrow(() -> new ProductNotFoundException(productId));
 
+        return ProductRespone.from(product, inventory);
+    }
+
+    @Transactional
+    public ProductRespone resetStock(Long productId, ResetStockRequest request){
+
+        log.info("Resseting stock: productId={}, newStock={}", productId, request.getNewStock());
+
+        Product product = productRepository.findById(productId)
+        .orElseThrow(() -> new ProductNotFoundException(productId));
+
+        Inventory inventory = inventoryRepository.findByProductId(productId)
+        .orElseThrow(() -> new ProductNotFoundException(productId));
+
+        inventory.setStock(request.getNewStock());
+        inventoryRepository.save(inventory);
+
+        log.info("Resseting stock: productId={}, newStock={}", productId, request.getNewStock());
         return ProductRespone.from(product, inventory);
     }
 }
