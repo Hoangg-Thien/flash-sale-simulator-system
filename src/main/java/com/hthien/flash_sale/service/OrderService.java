@@ -70,20 +70,26 @@ public class OrderService {
         request.getProductId(), request.getQuantity(), inventory.getStock());
        }
 
+       // Giả lập processing / race window giữa Read và Write khi KHÔNG dùng lock
+       if (lockMode == LockMode.NONE) {
+           try {
+               Thread.sleep(10); // 10ms giả lập xử lý business/payment
+           } catch (InterruptedException e) {
+               Thread.currentThread().interrupt();
+           }
+       }
+
        // Trừ Stock
        inventory.setStock(inventory.getStock() - request.getQuantity());
        inventoryRepository.save(inventory);
 
        // Tạo Order
-       long endTime = System.currentTimeMillis();
        Order order = Order.builder()
         .product(product)
         .orderStatus(OrderStatus.SUCCESS)
         .idempotencyKey(idempotencyKey)
         .lockMode(lockMode)
         .requestedAt(Instant.ofEpochMilli(startTime))
-        .completedAt(Instant.ofEpochMilli(endTime))
-        .latencyMs(endTime - startTime)
         .build();
 
         // Tạo OrderItem
@@ -103,6 +109,12 @@ public class OrderService {
         */
        try {
         order = orderRepository.save(order);
+        
+        long endTime = System.currentTimeMillis();
+        order.setLatencyMs(endTime - startTime);
+        order.setCompletedAt(Instant.ofEpochMilli(endTime));
+        order = orderRepository.save(order);
+
         log.info("Order created: id={}, productId={}, lockMode={}",
         order.getId(), product.getId(), lockMode);
        } catch (DataIntegrityViolationException e) {
