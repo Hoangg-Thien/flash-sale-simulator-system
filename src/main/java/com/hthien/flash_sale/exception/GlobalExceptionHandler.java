@@ -58,6 +58,12 @@ public class GlobalExceptionHandler {
         return ErrorResponse.of(400, "INVALID_ARGUMENT", ex.getMessage(), request.getRequestURI());
     }
 
+    @ExceptionHandler(SimulationNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleSimulationNotFound(SimulationNotFoundException ex, HttpServletRequest request){
+        return ErrorResponse.of(404, "SIMULATION_NOT_FOUND", ex.getMessage(), request.getRequestURI());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneral(Exception ex, HttpServletRequest request) {
