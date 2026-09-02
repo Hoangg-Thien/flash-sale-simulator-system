@@ -46,8 +46,8 @@ public class Inventory {
     @Column(nullable = false)
     private Integer stock;
 
-    @Version
-    private Long version;
+    @Builder.Default
+    private Long version = 0L;
 
     @Column(name = "update_at", nullable = false)
     private Instant updatedAt;
