@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.hthien.flash_sale.dto.response.OrderResponse;
 
+import jakarta.persistence.OptimisticLockException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,6 +63,21 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleSimulationNotFound(SimulationNotFoundException ex, HttpServletRequest request){
         return ErrorResponse.of(404, "SIMULATION_NOT_FOUND", ex.getMessage(), request.getRequestURI());
+    }
+
+    // 409 = conflict về state (sản phẩm đang được xử lý — là business conflict)
+    @ExceptionHandler(LockAcquisitionException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleLockAcquisition(LockAcquisitionException ex, HttpServletRequest request){
+        return ErrorResponse.of(409, "LOCK_ACQUISITION_FAILED", ex.getMessage(), request.getRequestURI());
+    }
+
+    // Optimistic lock conflict → 409
+    @ExceptionHandler(OptimisticLockException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleOptimisticLock(OptimisticLockException ex, HttpServletRequest request){
+        return ErrorResponse.of(409, "OPTIMISTIC_LOCK_CONFLICT",
+        "Resource was modified by another request. Please retry.", request.getRequestURI());
     }
 
     @ExceptionHandler(Exception.class)
