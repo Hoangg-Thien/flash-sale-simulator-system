@@ -20,4 +20,8 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long>{
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT i FROM Inventory i WHERE i.product.id = :productId")
     Optional<Inventory> findByProductIdForUpdate(@Param("productId") Long productId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query(value = "UPDATE inventory SET stock = :newStock, update_at = CURRENT_TIMESTAMP WHERE product_id = :productId", nativeQuery = true)
+    void updateStockUnsafe(@Param("productId") Long productId, @Param("newStock") Integer newStock);
 }

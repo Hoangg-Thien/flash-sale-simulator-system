@@ -71,6 +71,7 @@ public class SimulationService {
 
         // tính kết quả tổng hợp và lưu
         SimulationRun completedRun = completeSimulationRun(run, simRequests, request.getProductId());
+        completedRun.setProduct(product);
 
         // map sang response dto
         List<SimulationRequestResponse> requestResponses = simRequests.stream()
