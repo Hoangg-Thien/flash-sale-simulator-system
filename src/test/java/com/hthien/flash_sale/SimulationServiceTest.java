@@ -186,6 +186,180 @@ class SimulationServiceTest {
             .hasSize(20);
     }
 
+    // ============================================================
+    // TEST 4: OPTIMISTIC LOCK — phải ngăn oversell
+    // ============================================================
+    @Test
+    @DisplayName("[MUST PASS] OPTIMISTIC LOCK: stock=1, 20 thread → oversellingDetected=false")
+    void runSimulation_withOptimisticLock_shouldPreventOverselling() {
+        // Arrange: stock=1, 20 thread cùng lúc
+        CreateSimulationRequest request = buildSimRequest(
+            testProduct.getId(), 1, 20, "OPTIMISTIC");
+
+        // Act
+        SimulationRunResponse response = simulationService.runSimulation(request);
+
+        // Assert: KHÔNG được có oversell
+        assertThat(response.getOversellingDetected())
+            .as("""
+                OPTIMISTIC LOCK FAILED: finalStock=%d, successCount=%d.
+                @Version conflict không được xử lý đúng.
+                """, response.getFinalStock(), response.getSuccessCount())
+            .isFalse();
+
+        // Chỉ 1 người được mua khi stock=1
+        assertThat(response.getSuccessCount())
+            .as("Với stock=1 và OPTIMISTIC lock, chỉ đúng 1 request được thành công")
+            .isEqualTo(1);
+
+        // Final stock phải là 0 (không phải âm)
+        assertThat(response.getFinalStock())
+            .as("Final stock phải là 0 sau khi 1 người mua thành công")
+            .isEqualTo(0);
+
+        // Tổng vẫn = 20
+        assertThat(response.getSuccessCount() + response.getFailedCount())
+            .isEqualTo(20);
+
+        // Trong 19 request thất bại: có thể là InsufficientStockException HOẶC OptimisticLockException
+        // Cả 2 đều là expected behavior của OPTIMISTIC lock
+        assertThat(response.getFailedCount()).isEqualTo(19);
+    }
+
+    // Test lặp: OPTIMISTIC ổn định qua 3 lần chạy
+    @Test
+    @DisplayName("[STABILITY] OPTIMISTIC LOCK: ổn định qua 3 lần (luôn oversellingDetected=false)")
+    void runSimulation_withOptimisticLock_stableAcrossMultipleRuns() {
+        for (int i = 0; i < 3; i++) {
+            // Reset data
+            simulationRequestRepository.deleteAll();
+            simulationRunRepository.deleteAll();
+            orderRepository.deleteAll();
+
+            Inventory inventory = inventoryRepository.findByProductId(testProduct.getId()).get();
+            inventory.setStock(1);
+            inventoryRepository.save(inventory);
+
+            CreateSimulationRequest request = buildSimRequest(
+                testProduct.getId(), 1, 20, "OPTIMISTIC");
+            SimulationRunResponse response = simulationService.runSimulation(request);
+
+            assertThat(response.getOversellingDetected())
+                .as("Run %d: OPTIMISTIC lock PHẢI ngăn được oversell", i + 1)
+                .isFalse();
+
+            assertThat(response.getSuccessCount())
+                .as("Run %d: Chỉ 1 người mua thành công khi stock=1", i + 1)
+                .isEqualTo(1);
+        }
+    }
+
+    // ============================================================
+    // TEST 5: PESSIMISTIC LOCK — phải ngăn oversell
+    // ============================================================
+    @Test
+    @DisplayName("[MUST PASS] PESSIMISTIC LOCK: stock=1, 20 thread → oversellingDetected=false")
+    void runSimulation_withPessimisticLock_shouldPreventOverselling() {
+        // Arrange
+        CreateSimulationRequest request = buildSimRequest(
+            testProduct.getId(), 1, 20, "PESSIMISTIC");
+
+        // Act
+        SimulationRunResponse response = simulationService.runSimulation(request);
+
+        // Assert: KHÔNG được có oversell
+        assertThat(response.getOversellingDetected())
+            .as("""
+                PESSIMISTIC LOCK FAILED: finalStock=%d, successCount=%d.
+                SELECT FOR UPDATE không hoạt động đúng.
+                """, response.getFinalStock(), response.getSuccessCount())
+            .isFalse();
+
+        assertThat(response.getSuccessCount()).isEqualTo(1);
+        assertThat(response.getFinalStock()).isEqualTo(0);
+        assertThat(response.getSuccessCount() + response.getFailedCount()).isEqualTo(20);
+    }
+
+    // Test lặp: PESSIMISTIC ổn định qua 3 lần chạy
+    @Test
+    @DisplayName("[STABILITY] PESSIMISTIC LOCK: ổn định qua 3 lần (luôn oversellingDetected=false)")
+    void runSimulation_withPessimisticLock_stableAcrossMultipleRuns() {
+        for (int i = 0; i < 3; i++) {
+            simulationRequestRepository.deleteAll();
+            simulationRunRepository.deleteAll();
+            orderRepository.deleteAll();
+
+            Inventory inventory = inventoryRepository.findByProductId(testProduct.getId()).get();
+            inventory.setStock(1);
+            inventoryRepository.save(inventory);
+
+            CreateSimulationRequest request = buildSimRequest(
+                testProduct.getId(), 1, 20, "PESSIMISTIC");
+            SimulationRunResponse response = simulationService.runSimulation(request);
+
+            assertThat(response.getOversellingDetected())
+                .as("Run %d: PESSIMISTIC lock PHẢI ngăn được oversell", i + 1)
+                .isFalse();
+
+            assertThat(response.getSuccessCount())
+                .as("Run %d: Chỉ 1 người mua thành công khi stock=1", i + 1)
+                .isEqualTo(1);
+        }
+    }
+
+    // ============================================================
+    // TEST 6: REDIS LOCK — phải ngăn oversell
+    // ============================================================
+    @Test
+    @DisplayName("[MUST PASS] REDIS LOCK: stock=1, 20 thread → oversellingDetected=false")
+    void runSimulation_withRedisLock_shouldPreventOverselling() {
+        // Arrange
+        CreateSimulationRequest request = buildSimRequest(
+            testProduct.getId(), 1, 20, "REDIS");
+
+        // Act
+        SimulationRunResponse response = simulationService.runSimulation(request);
+
+        // Assert: KHÔNG được có oversell
+        assertThat(response.getOversellingDetected())
+            .as("""
+                REDIS LOCK FAILED: finalStock=%d, successCount=%d.
+                Redisson distributed lock không hoạt động đúng.
+                """, response.getFinalStock(), response.getSuccessCount())
+            .isFalse();
+
+        assertThat(response.getSuccessCount()).isEqualTo(1);
+        assertThat(response.getFinalStock()).isEqualTo(0);
+        assertThat(response.getSuccessCount() + response.getFailedCount()).isEqualTo(20);
+    }
+
+    // Test lặp: REDIS ổn định qua 3 lần chạy
+    @Test
+    @DisplayName("[STABILITY] REDIS LOCK: ổn định qua 3 lần (luôn oversellingDetected=false)")
+    void runSimulation_withRedisLock_stableAcrossMultipleRuns() {
+        for (int i = 0; i < 3; i++) {
+            simulationRequestRepository.deleteAll();
+            simulationRunRepository.deleteAll();
+            orderRepository.deleteAll();
+
+            Inventory inventory = inventoryRepository.findByProductId(testProduct.getId()).get();
+            inventory.setStock(1);
+            inventoryRepository.save(inventory);
+
+            CreateSimulationRequest request = buildSimRequest(
+                testProduct.getId(), 1, 20, "REDIS");
+            SimulationRunResponse response = simulationService.runSimulation(request);
+
+            assertThat(response.getOversellingDetected())
+                .as("Run %d: REDIS lock PHẢI ngăn được oversell", i + 1)
+                .isFalse();
+
+            assertThat(response.getSuccessCount())
+                .as("Run %d: Chỉ 1 người mua thành công khi stock=1", i + 1)
+                .isEqualTo(1);
+        }
+    }
+
     // Helper
     private CreateSimulationRequest buildSimRequest(
             Long productId, int initialStock, int concurrentUsers, String lockMode) {

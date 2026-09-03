@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Map;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -72,8 +73,8 @@ public class OrderService {
             );
         } catch (InsufficientStockException | LockAcquisitionException | DuplicateOrderException e) {
             throw e; // re-throw business exceptions không bọc
-        } catch (OptimisticLockException e) {
-            // Hibernate throw khi @Version conflict → map sang 409
+        } catch (OptimisticLockException | ObjectOptimisticLockingFailureException e) {
+            // Bắt cả JPA OptimisticLockException và Spring wrapper
             log.warn("Optimistic lock conflict: productId={}", request.getProductId());
             throw new InsufficientStockException(request.getProductId(), request.getQuantity(), 0);
         } catch (Exception e) {
@@ -86,8 +87,9 @@ public class OrderService {
             if (e.getCause() instanceof DuplicateOrderException doe) {
                 throw doe;
             }
-            if (e.getCause() instanceof OptimisticLockException) {
-                log.warn("Optimistic lock conflict: productId={}", request.getProductId());
+            if (e.getCause() instanceof OptimisticLockException
+                || e.getCause() instanceof ObjectOptimisticLockingFailureException) {
+                log.warn("Optimistic lock conflict (wrapped): productId={}", request.getProductId());
                 throw new InsufficientStockException(request.getProductId(), request.getQuantity(), 0);
             }
             throw new RuntimeException("Unexpected error during purchase", e);
