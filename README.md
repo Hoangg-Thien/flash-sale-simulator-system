@@ -1,13 +1,15 @@
-# Flash Sale Platform — Concurrency Demo
+# Flash Sale Emulator System — Concurrency Demo
 
 Demo platform để minh họa Race Condition và các Locking Strategies trong hệ thống e-commerce flash sale.
 
 ## Tech Stack
-- **Java 21** + **Spring Boot 3.5**
-- **PostgreSQL 17.9** — persistent storage, pessimistic locking (`SELECT ... FOR UPDATE`)
-- **Redis 7** + **Redisson** — distributed locking
-- **Flyway** — database migration & version control
-- **Testcontainers** — integration tests với real containers
+| Technologies |
+|---|
+| **Java 21** + **Spring Boot 3.5**
+| **PostgreSQL 17.9** — persistent storage, pessimistic locking (`SELECT ... FOR UPDATE`)
+| **Redis 7** + **Redisson** — distributed locking
+| **Flyway** — database migration & version control
+| **Testcontainers** — integration tests với real containers
 
 ## Quick Start
 
@@ -62,10 +64,10 @@ curl -X POST http://localhost:8080/api/v1/simulations \
 
 | Strategy | Cơ chế | Thread-safe multi-instance | Best for |
 |---|---|---|---|
-| `NONE` | Không lock | ❌ | Reproduce bug |
-| `OPTIMISTIC` | `@Version` (Hibernate) | ✅ DB | Low contention |
-| `PESSIMISTIC` | `SELECT FOR UPDATE` | ✅ DB | High contention |
-| `REDIS` | Redisson Distributed Lock | ✅ Redis | Multi-instance |
+| `NONE` | Không lock | No | Reproduce bug |
+| `OPTIMISTIC` | `@Version` (Hibernate) |  DB | Low contention |
+| `PESSIMISTIC` | `SELECT FOR UPDATE` |  DB | High contention |
+| `REDIS` | Redisson Distributed Lock |  Redis | Multi-instance |
 
 ## Chạy Tests
 
@@ -78,6 +80,49 @@ mvn test -Dtest=SimulationServiceTest,SimulationComparisonTest,ConcurrencyIntegr
 
 # Tất cả tests
 mvn test
+```
+
+## Load Testing với K6
+
+Hệ thống cung cấp trọn bộ k6 load test scripts đo throughput, latency và tính toàn vẹn dữ liệu từ bên ngoài qua HTTP.
+
+### Chạy Load Tests
+
+```bash
+# 1. Smoke test (kiểm tra nhanh trước khi tải cao)
+k6 run load-test/smoke-test.js
+
+# 2. Test từng chiến lược khóa
+k6 run load-test/purchase-none.js          # Tái hiện Race condition (NONE)
+k6 run load-test/purchase-optimistic.js    # Optimistic locking (@Version)
+k6 run load-test/purchase-pessimistic.js   # Pessimistic locking (SELECT FOR UPDATE)
+k6 run load-test/purchase-redis.js         # Redisson Distributed Lock
+
+# 3. So sánh 4 mode side-by-side
+k6 run load-test/comparison.js
+
+# Hoặc chạy toàn bộ test suite bằng script tự động:
+# Linux / macOS:
+bash load-test/run-all.sh
+
+# Windows (PowerShell):
+.\load-test\run-all.ps1
+```
+
+### Kết quả K6 Benchmark thực tế (20 Concurrent VUs):
+
+```text
+═══════════════════════════════════════════════════════════════
+     FLASH SALE — K6 LOAD TEST COMPARISON RESULTS              
+     Config: 5 items, 20 concurrent users each
+═══════════════════════════════════════════════════════════════
+Mode            FinalStock   Oversell?    Notes
+─────────────────────────────────────────────────────────────
+NONE            0             YES       (oversell expected — bug demo)
+OPTIMISTIC      0             NO        (lock prevents oversell)
+PESSIMISTIC     0             NO        (lock prevents oversell)
+REDIS           0             NO        (lock prevents oversell)
+═══════════════════════════════════════════════════════════════
 ```
 
 ## Dừng services

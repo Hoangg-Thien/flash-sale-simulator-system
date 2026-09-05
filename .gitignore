@@ -41,3 +41,7 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# K6 Load Test Results
+load-test/results/*.json
+load-test/results/*.html
