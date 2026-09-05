@@ -44,4 +44,3 @@ management:
 app:
   lock:
     wait-time-seconds: 2
-    lease-time-seconds: 10

@@ -42,8 +42,6 @@ public class RedisLockStrategy implements InventoryLockStrategy{
     @Value("${app.lock.wait-time-seconds:2}")
     private long waitTimeSeconds;
 
-    @Value("${app.lock.lease-time-seconds:10}")
-    private long leaseTimeSeconds;
 
     private static final String LOCK_KEY_PREFIX = "lock:inventory:";
 
@@ -52,8 +50,8 @@ public class RedisLockStrategy implements InventoryLockStrategy{
         String lockKey = LOCK_KEY_PREFIX + productId;
         RLock lock = redissonClient.getLock(lockKey);
 
-        log.debug("RedisLockStrategy: trying to acquire lock: key={}, waitTime={}s, leaseTime={}s",
-        lockKey, waitTimeSeconds, leaseTimeSeconds);
+        log.debug("RedisLockStrategy: trying to acquire lock: key={}, waitTime={}s (Watchdog enabled)",
+        lockKey, waitTimeSeconds);
 
         long lockStart = System.currentTimeMillis();
 
@@ -62,7 +60,7 @@ public class RedisLockStrategy implements InventoryLockStrategy{
         // Khác lock(): lock() block vô hạn → nguy hiểm nếu task treo
         boolean acquired;
         try {
-            acquired = lock.tryLock(waitTimeSeconds, leaseTimeSeconds, TimeUnit.SECONDS);
+            acquired = lock.tryLock(waitTimeSeconds, TimeUnit.SECONDS);
         } catch (RedisException | TimeoutException e) {
             log.error("Redis is down or unreachable when acquiring lock for productId={}: {}", productId, e.getMessage());
             throw new LockAcquisitionException(productId);

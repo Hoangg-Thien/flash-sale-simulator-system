@@ -82,7 +82,7 @@ class LockStrategyTest {
     void redisLockStrategy_whenLockAcquired_shouldExecuteAndRelease() throws Exception {
         // Arrange
         when(redissonClient.getLock("lock:inventory:1")).thenReturn(rLock);
-        when(rLock.tryLock(anyLong(), anyLong(), any())).thenReturn(true);
+        when(rLock.tryLock(anyLong(), any())).thenReturn(true);
         when(rLock.isHeldByCurrentThread()).thenReturn(true);
 
         RedisLockStrategy strategy = new RedisLockStrategy(redissonClient);
@@ -106,7 +106,7 @@ class LockStrategyTest {
     void redisLockStrategy_whenLockNotAcquired_shouldThrowLockAcquisitionException() throws Exception {
         // Arrange
         when(redissonClient.getLock("lock:inventory:1")).thenReturn(rLock);
-        when(rLock.tryLock(anyLong(), anyLong(), any())).thenReturn(false); // lock không available
+        when(rLock.tryLock(anyLong(), any())).thenReturn(false); // lock không available
 
         RedisLockStrategy strategy = new RedisLockStrategy(redissonClient);
 
@@ -122,7 +122,7 @@ class LockStrategyTest {
     void redisLockStrategy_whenTaskThrows_shouldStillReleaseLock() throws Exception {
         // Arrange
         when(redissonClient.getLock("lock:inventory:1")).thenReturn(rLock);
-        when(rLock.tryLock(anyLong(), anyLong(), any())).thenReturn(true);
+        when(rLock.tryLock(anyLong(), any())).thenReturn(true);
         when(rLock.isHeldByCurrentThread()).thenReturn(true);
 
         RedisLockStrategy strategy = new RedisLockStrategy(redissonClient);
