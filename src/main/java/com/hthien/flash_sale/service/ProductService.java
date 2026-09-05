@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.hthien.flash_sale.dto.request.CreateProductRequest;
 import com.hthien.flash_sale.dto.request.ResetStockRequest;
-import com.hthien.flash_sale.dto.response.ProductRespone;
+import com.hthien.flash_sale.dto.response.ProductResponse;
 import com.hthien.flash_sale.entity.Inventory;
 import com.hthien.flash_sale.entity.Product;
 import com.hthien.flash_sale.exception.ProductNotFoundException;
@@ -24,7 +24,7 @@ public class ProductService {
     private final InventoryRepository inventoryRepository;
 
     @Transactional
-    public ProductRespone createProduct(CreateProductRequest request){
+    public ProductResponse createProduct(CreateProductRequest request){
 
         log.info("Creating product: name={}, price={}, initialStock={}",
         request.getName(), request.getPrice(), request.getInitialStock());
@@ -42,11 +42,11 @@ public class ProductService {
         inventory = inventoryRepository.save(inventory);
 
         log.info("Product created: id={}", product.getId());
-        return ProductRespone.from(product, inventory);
+        return ProductResponse.from(product, inventory);
     }
 
     @Transactional(readOnly = true)
-    public ProductRespone getProduct(Long productId){
+    public ProductResponse getProduct(Long productId){
 
         Product product = productRepository.findById(productId)
         .orElseThrow(() -> new ProductNotFoundException(productId));
@@ -54,11 +54,11 @@ public class ProductService {
         Inventory inventory = inventoryRepository.findByProductId(productId)
         .orElseThrow(() -> new ProductNotFoundException(productId));
 
-        return ProductRespone.from(product, inventory);
+        return ProductResponse.from(product, inventory);
     }
 
     @Transactional
-    public ProductRespone resetStock(Long productId, ResetStockRequest request){
+    public ProductResponse resetStock(Long productId, ResetStockRequest request){
 
         log.info("Resseting stock: productId={}, newStock={}", productId, request.getNewStock());
 
@@ -72,6 +72,6 @@ public class ProductService {
         inventoryRepository.save(inventory);
 
         log.info("Resseting stock: productId={}, newStock={}", productId, request.getNewStock());
-        return ProductRespone.from(product, inventory);
+        return ProductResponse.from(product, inventory);
     }
 }

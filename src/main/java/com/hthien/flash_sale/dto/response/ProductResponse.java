@@ -11,7 +11,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class ProductRespone {
+public class ProductResponse {
     private Long id;
     private String name;
     private BigDecimal price;
@@ -20,8 +20,8 @@ public class ProductRespone {
     private Instant createdAt;
     private Instant updatedAt;
 
-    public static ProductRespone from(Product product, Inventory inventory){
-        return ProductRespone.builder()
+    public static ProductResponse from(Product product, Inventory inventory){
+        return ProductResponse.builder()
         .id(product.getId())
         .name(product.getName())
         .price(product.getPrice())

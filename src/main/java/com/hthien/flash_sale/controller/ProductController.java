@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hthien.flash_sale.dto.request.CreateProductRequest;
 import com.hthien.flash_sale.dto.request.ResetStockRequest;
-import com.hthien.flash_sale.dto.response.ProductRespone;
+import com.hthien.flash_sale.dto.response.ProductResponse;
 import com.hthien.flash_sale.service.ProductService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,7 +31,7 @@ public class ProductController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new product with initial inventory")
-    public ProductRespone createProduct(
+    public ProductResponse createProduct(
         @Valid @RequestBody CreateProductRequest request
     ){
         return productService.createProduct(request);
@@ -39,7 +39,7 @@ public class ProductController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get product with current stock")
-    public ProductRespone getProduct(
+    public ProductResponse getProduct(
         @PathVariable Long id
     ){
         return productService.getProduct(id);
@@ -47,7 +47,7 @@ public class ProductController {
 
     @PostMapping("/{id}/inventory/reset")
     @Operation(summary = "Reset product stock (for re-running simulations)")
-    public ProductRespone resetStock(
+    public ProductResponse resetStock(
         @PathVariable Long id,
         @Valid @RequestBody ResetStockRequest request
     ){
