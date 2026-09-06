@@ -11,7 +11,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.hthien.flash_sale.concurrency.InventoryLockStrategy;
 import com.hthien.flash_sale.dto.request.CreateOrderRequest;
 import com.hthien.flash_sale.dto.response.OrderResponse;
-import com.hthien.flash_sale.entity.Inventory;
 import com.hthien.flash_sale.entity.Order;
 import com.hthien.flash_sale.entity.OrderItem;
 import com.hthien.flash_sale.entity.Product;
@@ -40,43 +39,68 @@ public class OrderService {
     private final TransactionTemplate transactionTemplate;
     private final Map<String, InventoryLockStrategy> lockStrategies; 
 
-    public OrderResponse createOrder(CreateOrderRequest request, String idempotencyKey){
+    public OrderResponse createOrder(CreateOrderRequest request, String idempotencyKey) {
         long startTime = System.currentTimeMillis();
 
-        /*
-        Idempotency check
-        Nếu client gửi kèm Idempotency-Key, check xem key này đã xử lý chưa
-        */
-       if(idempotencyKey != null && !idempotencyKey.isBlank()){
-        orderRepository.findByIdempotencyKey(idempotencyKey).ifPresent(existingOrder -> {
-            log.info("Duplicate request detected: idempotencyKey={}, orderId={}",
-            idempotencyKey, existingOrder.getId());
-            throw new DuplicateOrderException(existingOrder);
-        });
-       }
+        // 1. Check idempotency
+        checkIdempotency(idempotencyKey);
 
-       // Validate Product
-       Product product = productRepository.findById(request.getProductId())
-       .orElseThrow(() -> new ProductNotFoundException(request.getProductId()));
+        // 2. Validate Product
+        Product product = productRepository.findById(request.getProductId())
+        .orElseThrow(() -> new ProductNotFoundException(request.getProductId()));
 
-       // Parse và validate lockMode
-       LockMode lockMode = parseLockMode(request.getLockMode());
+        // 3. Lấy Strategy theo lockMode
+        LockMode lockMode = parseLockMode(request.getLockMode());
+        InventoryLockStrategy strategy = getStrategy(lockMode);
 
-       // Lấy đúng strategy theo lockMode
-       InventoryLockStrategy strategy = getStrategy(lockMode);
-
+        // 4. Trừ kho và tạo Order trong Transaction
         try {
-            return strategy.executeWithLock(request.getProductId(),
-                () -> transactionTemplate.execute(status ->
-                executePurchase(product, request, lockMode, idempotencyKey, startTime)
-                )
-            );
+            return transactionTemplate.execute(status -> {
+                // Strategy trừ kho theo cơ chế riêng của nó (NoLock, Optimistic, Pessimistic, Redis)
+                strategy.deductStock(request.getProductId(), request.getQuantity());
+
+                // Tạo và lưu đơn hàng
+                Order order = Order.builder()
+                .product(product)
+                .orderStatus(OrderStatus.SUCCESS)
+                .idempotencyKey(idempotencyKey)
+                .lockMode(lockMode)
+                .requestedAt(Instant.ofEpochMilli(startTime))
+                .build();
+
+                OrderItem item = OrderItem.builder()
+                .order(order)
+                .product(product)
+                .quantity(request.getQuantity())
+                .unitPrice(product.getPrice())
+                .build();
+
+                order.getItems().add(item);
+
+                try {
+                    order = orderRepository.save(order);
+                    long endTime = System.currentTimeMillis();
+                    order.setLatencyMs(endTime - startTime);
+                    order.setCompletedAt(Instant.ofEpochMilli(endTime));
+                    order = orderRepository.save(order);
+                    log.info("Order created: id={}, productId={}, lockMode={}",
+                        order.getId(), product.getId(), lockMode);
+                } catch (DataIntegrityViolationException e) {
+                    log.warn("DataIntegrityViolation on idempotency key={}", idempotencyKey);
+                    Order existingOrder = orderRepository.findByIdempotencyKey(idempotencyKey)
+                        .orElseThrow(() -> e);
+                    throw new DuplicateOrderException(existingOrder);
+                }
+                return OrderResponse.from(order);
+            });
+
         } catch (InsufficientStockException | LockAcquisitionException | DuplicateOrderException e) {
-            throw e; // re-throw business exceptions không bọc
+            throw e;
+
         } catch (OptimisticLockException | ObjectOptimisticLockingFailureException e) {
-            // Bắt cả JPA OptimisticLockException và Spring wrapper
             log.warn("Optimistic lock conflict: productId={}", request.getProductId());
             throw new InsufficientStockException(request.getProductId(), request.getQuantity(), 0);
+        
         } catch (Exception e) {
             if (e.getCause() instanceof InsufficientStockException ise) {
                 throw ise;
@@ -92,85 +116,22 @@ public class OrderService {
                 log.warn("Optimistic lock conflict (wrapped): productId={}", request.getProductId());
                 throw new InsufficientStockException(request.getProductId(), request.getQuantity(), 0);
             }
+
             throw new RuntimeException("Unexpected error during purchase", e);
         }
     }
-    
-    /**
-     * Business logic mua hàng — được wrap bởi strategy.
-     * Method này được gọi TRONG executeWithLock() của strategy qua TransactionTemplate.
-     */
-    private OrderResponse executePurchase(Product product, CreateOrderRequest request, LockMode lockMode, String idempotencyKey, long startTime){
 
-        Inventory inventory;
-        // load inventory
-        if(lockMode == LockMode.PESSIMISTIC){
-            inventory = inventoryRepository.findByProductIdForUpdate(request.getProductId())
-            .orElseThrow(() -> new ProductNotFoundException(request.getProductId()));
-        } else {
-            inventory = inventoryRepository.findByProductId(request.getProductId())
-            .orElseThrow(() -> new ProductNotFoundException(request.getProductId()));
-        }
-
-        // check stock
-        if(inventory.getStock() < request.getQuantity()){
-            log.warn("Insufficient stock: productId={}, requested={}, available={}",
-            request.getProductId(), request.getQuantity(), inventory.getStock());
-            throw new InsufficientStockException(
-            request.getProductId(), request.getQuantity(), inventory.getStock());
-        }
-
-        // Giả lập race window chỉ khi mode = NONE (để Phase 3 test tái hiện bug)
-        if (lockMode == LockMode.NONE) {
-            try { Thread.sleep(10); } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-
-        // trừ stock
-        if (lockMode == LockMode.NONE) {
-            inventoryRepository.updateStockUnsafe(request.getProductId(), inventory.getStock() - request.getQuantity());
-        } else {
-            inventory.setStock(inventory.getStock() - request.getQuantity());
-            inventoryRepository.save(inventory);
-        }
-
-        // Tạo Order + OrderItem
-        Order order = Order.builder()
-        .product(product)
-        .orderStatus(OrderStatus.SUCCESS)
-        .idempotencyKey(idempotencyKey)
-        .lockMode(lockMode)
-        .requestedAt(Instant.ofEpochMilli(startTime))
-        .build();
-
-        OrderItem item = OrderItem.builder()
-        .order(order)
-        .product(product)
-        .quantity(request.getQuantity())
-        .unitPrice(product.getPrice())
-        .build();
-
-        order.getItems().add(item);
-
-        try {
-            order = orderRepository.save(order);
-            long endTime = System.currentTimeMillis();
-            order.setLatencyMs(endTime - startTime);
-            order.setCompletedAt(Instant.ofEpochMilli(endTime));
-            order = orderRepository.save(order);
-            log.info("Order created: id={}, productId={}, lockMode={}",
-                order.getId(), product.getId(), lockMode);
-        } catch (DataIntegrityViolationException e) {
-            log.warn("DataIntegrityViolation on idempotency key={}", idempotencyKey);
-            Order existingOrder = orderRepository.findByIdempotencyKey(idempotencyKey)
-                .orElseThrow(() -> e);
+    private void checkIdempotency(String idempotencyKey) {
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            orderRepository.findByIdempotencyKey(idempotencyKey).ifPresent(existingOrder -> {
+            log.info("Duplicate request detected: idempotencyKey={}, orderId={}",
+            idempotencyKey, existingOrder.getId());
             throw new DuplicateOrderException(existingOrder);
+            });
         }
-        return OrderResponse.from(order);
     }
 
-    private InventoryLockStrategy getStrategy(LockMode lockMode){
+    private InventoryLockStrategy getStrategy(LockMode lockMode) {
         String beanName = switch (lockMode) {
             case NONE -> "noLockStrategy";
             case OPTIMISTIC -> "optimisticLockStrategy";
@@ -184,12 +145,12 @@ public class OrderService {
         return strategy;
     }
 
-    private LockMode parseLockMode(String lockModeStr){
+    private LockMode parseLockMode(String lockModeStr) {
         try {
             return LockMode.valueOf(lockModeStr.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
-            "Invalid lockMode: " + lockModeStr +". Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS");
+                "Invalid lockMode: " + lockModeStr + ". Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS");
         }
     }
 }
