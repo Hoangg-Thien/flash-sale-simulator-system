@@ -1,4 +1,7 @@
-package com.hthien.flash_sale;
+package com.hthien.flash_sale.integration;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -20,16 +23,13 @@ import com.hthien.flash_sale.entity.Product;
 import com.hthien.flash_sale.repository.InventoryRepository;
 import com.hthien.flash_sale.repository.ProductRepository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers
-class ProductRepositoryTest {
+class ProductRepositoryIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17.9")
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("testdb")
             .withUsername("test")
             .withPassword("test");
@@ -46,9 +46,8 @@ class ProductRepositoryTest {
     @Autowired InventoryRepository inventoryRepository;
 
     @Test
-    @DisplayName("Tạo product và inventory — verify lưu đúng vào DB")
+    @DisplayName("Create product and inventory — verify persisted correctly to PostgreSQL")
     void createProductAndInventory_shouldPersistCorrectly() {
-        // Arrange
         Product product = Product.builder()
             .name("iPhone 15 Pro")
             .price(new BigDecimal("29990000"))
@@ -61,19 +60,16 @@ class ProductRepositoryTest {
             .build();
         inventory = inventoryRepository.save(inventory);
 
-        // Act
         Optional<Inventory> found = inventoryRepository.findByProductId(product.getId());
 
-        // Assert
         assertThat(found).isPresent();
         assertThat(found.get().getStock()).isEqualTo(1);
         assertThat(found.get().getVersion()).isEqualTo(0L);
     }
 
     @Test
-    @DisplayName("UNIQUE constraint trên product_id — không thể tạo 2 inventory cho 1 product")
+    @DisplayName("UNIQUE constraint on product_id — cannot create duplicate inventory records")
     void createDuplicateInventory_shouldThrowConstraintViolation() {
-        // Arrange
         Product product = productRepository.save(
             Product.builder().name("Test Product").price(BigDecimal.TEN).build()
         );
@@ -82,12 +78,11 @@ class ProductRepositoryTest {
             Inventory.builder().product(product).stock(10).build()
         );
 
-        // Act & Assert
         assertThatThrownBy(() -> {
             inventoryRepository.save(
                 Inventory.builder().product(product).stock(5).build()
             );
-            inventoryRepository.flush();  // force flush để trigger constraint
+            inventoryRepository.flush();
         }).isInstanceOf(DataIntegrityViolationException.class);
     }
 }

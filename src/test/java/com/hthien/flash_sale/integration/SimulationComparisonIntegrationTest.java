@@ -1,4 +1,4 @@
-package com.hthien.flash_sale;
+package com.hthien.flash_sale.integration;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -10,13 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.hthien.flash_sale.dto.request.CreateSimulationRequest;
 import com.hthien.flash_sale.dto.response.SimulationRunResponse;
@@ -29,31 +22,7 @@ import com.hthien.flash_sale.repository.SimulationRequestRepository;
 import com.hthien.flash_sale.repository.SimulationRunRepository;
 import com.hthien.flash_sale.service.SimulationService;
 
-@SpringBootTest
-@Testcontainers
-class SimulationComparisonTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres =
-        new PostgreSQLContainer<>("postgres:16")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @Container
-    static GenericContainer<?> redis =
-        new GenericContainer<>("redis:7-alpine")
-            .withExposedPorts(6379);
-
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.flyway.enabled", () -> "true");
-        registry.add("spring.data.redis.host", redis::getHost);
-        registry.add("spring.data.redis.port", redis::getFirstMappedPort);
-    }
+class SimulationComparisonIntegrationTest extends BaseIntegrationTest {
 
     @Autowired SimulationService simulationService;
     @Autowired ProductRepository productRepository;
@@ -86,19 +55,13 @@ class SimulationComparisonTest {
         );
     }
 
-    /**
-     * Test này chạy tất cả 4 mode và in bảng so sánh.
-     * Dùng để demo trong phỏng vấn: "đây là kết quả thực tế"
-     * Assertion cuối: NONE=oversell, còn lại=không oversell
-     */
     @Test
-    @DisplayName("COMPARISON: Chạy tất cả 4 mode — bảng so sánh before/after locking")
+    @DisplayName("COMPARISON: Run all 4 lock modes and verify comparison table")
     void comparison_allLockModes_showDifference() {
         List<String> modes = List.of("NONE", "OPTIMISTIC", "PESSIMISTIC", "REDIS");
         List<SimulationRunResponse> results = new ArrayList<>();
 
         for (String mode : modes) {
-            // Reset data giữa các lần chạy
             simulationRequestRepository.deleteAll();
             simulationRunRepository.deleteAll();
             orderRepository.deleteAll();
@@ -117,7 +80,6 @@ class SimulationComparisonTest {
             results.add(response);
         }
 
-        // In bảng so sánh
         System.out.println("\n");
         System.out.println("═══════════════════════════════════════════════════════════════════");
         System.out.println("          FLASH SALE CONCURRENCY — COMPARISON RESULTS              ");
@@ -140,20 +102,17 @@ class SimulationComparisonTest {
         }
         System.out.println("═══════════════════════════════════════════════════════════════════\n");
 
-        // Assertions
-        // NONE: phải oversell
         assertThat(results.get(0).getOversellingDetected())
-            .as("NONE mode PHẢI gây ra overselling (đây là baseline bug)")
+            .as("NONE mode must cause overselling")
             .isTrue();
 
-        // OPTIMISTIC, PESSIMISTIC, REDIS: không được oversell
         for (int i = 1; i < results.size(); i++) {
             assertThat(results.get(i).getOversellingDetected())
-                .as("%s mode PHẢI ngăn overselling", modes.get(i))
+                .as("%s mode must prevent overselling", modes.get(i))
                 .isFalse();
 
             assertThat(results.get(i).getSuccessCount())
-                .as("%s mode: chỉ 1 người mua thành công khi stock=1", modes.get(i))
+                .as("%s mode: exactly 1 purchase success when stock=1", modes.get(i))
                 .isEqualTo(1);
         }
     }

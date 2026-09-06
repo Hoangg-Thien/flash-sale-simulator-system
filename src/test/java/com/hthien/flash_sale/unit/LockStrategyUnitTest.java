@@ -1,11 +1,13 @@
-package com.hthien.flash_sale;
+package com.hthien.flash_sale.unit;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,13 +20,10 @@ import com.hthien.flash_sale.concurrency.RedisLockStrategy;
 import com.hthien.flash_sale.exception.LockAcquisitionException;
 
 /**
- * Unit test cho các lock strategy.
- * Dùng Mockito — không cần Testcontainers vì:
- * - Test strategy logic (acquire/release), không test business logic (trừ stock)
- * - Testcontainers sẽ được dùng trong Phase 5 (integration test với concurrent load)
+ * Unit tests for concurrency lock strategies using Mockito.
  */
 @ExtendWith(MockitoExtension.class)
-class LockStrategyTest {
+class LockStrategyUnitTest {
 
     @Mock
     private RedissonClient redissonClient;
@@ -32,9 +31,8 @@ class LockStrategyTest {
     @Mock
     private RLock rLock;
 
-    // TEST 1: NoLockStrategy — task được gọi trực tiếp
     @Test
-    @DisplayName("NoLockStrategy — task được gọi trực tiếp, không có overhead")
+    @DisplayName("NoLockStrategy — executes task directly without overhead")
     void noLockStrategy_shouldExecuteTaskDirectly() throws Exception {
         NoLockStrategy strategy = new NoLockStrategy();
         AtomicInteger callCount = new AtomicInteger(0);
@@ -48,9 +46,8 @@ class LockStrategyTest {
         assertThat(callCount.get()).isEqualTo(1);
     }
 
-    // TEST 2: NoLockStrategy — exception propagate đúng
     @Test
-    @DisplayName("NoLockStrategy — exception từ task được propagate ra ngoài")
+    @DisplayName("NoLockStrategy — propagates task exception directly")
     void noLockStrategy_shouldPropagateTaskException() {
         NoLockStrategy strategy = new NoLockStrategy();
 
@@ -60,9 +57,8 @@ class LockStrategyTest {
            .hasMessage("task error");
     }
 
-    // TEST 3: OptimisticLockStrategy — task được gọi, không có thêm logic
     @Test
-    @DisplayName("OptimisticLockStrategy — task được gọi, không thêm overhead")
+    @DisplayName("OptimisticLockStrategy — executes task directly")
     void optimisticLockStrategy_shouldExecuteTaskDirectly() throws Exception {
         OptimisticLockStrategy strategy = new OptimisticLockStrategy();
         AtomicInteger callCount = new AtomicInteger(0);
@@ -76,11 +72,9 @@ class LockStrategyTest {
         assertThat(callCount.get()).isEqualTo(1);
     }
 
-    // TEST 4: RedisLockStrategy — acquire thành công → task được gọi → lock released
     @Test
-    @DisplayName("RedisLockStrategy — acquire thành công, task chạy, lock released")
+    @DisplayName("RedisLockStrategy — acquires lock successfully, executes task, and releases lock")
     void redisLockStrategy_whenLockAcquired_shouldExecuteAndRelease() throws Exception {
-        // Arrange
         when(redissonClient.getLock("lock:inventory:1")).thenReturn(rLock);
         when(rLock.tryLock(anyLong(), any())).thenReturn(true);
         when(rLock.isHeldByCurrentThread()).thenReturn(true);
@@ -88,51 +82,42 @@ class LockStrategyTest {
         RedisLockStrategy strategy = new RedisLockStrategy(redissonClient);
         AtomicInteger callCount = new AtomicInteger(0);
 
-        // Act
         String result = strategy.executeWithLock(1L, () -> {
             callCount.incrementAndGet();
             return "success";
         });
 
-        // Assert
         assertThat(result).isEqualTo("success");
         assertThat(callCount.get()).isEqualTo(1);
-        verify(rLock).unlock(); // lock phải được release
+        verify(rLock).unlock();
     }
 
-    // TEST 5: RedisLockStrategy — acquire thất bại → LockAcquisitionException
     @Test
-    @DisplayName("RedisLockStrategy — acquire thất bại → LockAcquisitionException (không treo thread)")
+    @DisplayName("RedisLockStrategy — fails to acquire lock and throws LockAcquisitionException")
     void redisLockStrategy_whenLockNotAcquired_shouldThrowLockAcquisitionException() throws Exception {
-        // Arrange
         when(redissonClient.getLock("lock:inventory:1")).thenReturn(rLock);
-        when(rLock.tryLock(anyLong(), any())).thenReturn(false); // lock không available
+        when(rLock.tryLock(anyLong(), any())).thenReturn(false);
 
         RedisLockStrategy strategy = new RedisLockStrategy(redissonClient);
 
-        // Act & Assert
         assertThatThrownBy(() -> strategy.executeWithLock(1L, () -> "should not be called"))
             .isInstanceOf(LockAcquisitionException.class)
             .hasMessageContaining("Could not acquire lock");
     }
 
-    // TEST 6: RedisLockStrategy — task throw exception → lock vẫn được release
     @Test
-    @DisplayName("RedisLockStrategy — task throw exception → lock vẫn được release trong finally")
+    @DisplayName("RedisLockStrategy — always releases lock in finally block even if task throws exception")
     void redisLockStrategy_whenTaskThrows_shouldStillReleaseLock() throws Exception {
-        // Arrange
         when(redissonClient.getLock("lock:inventory:1")).thenReturn(rLock);
         when(rLock.tryLock(anyLong(), any())).thenReturn(true);
         when(rLock.isHeldByCurrentThread()).thenReturn(true);
 
         RedisLockStrategy strategy = new RedisLockStrategy(redissonClient);
 
-        // Act & Assert
         assertThatThrownBy(() -> strategy.executeWithLock(1L, () -> {
             throw new RuntimeException("business logic failed");
         })).isInstanceOf(RuntimeException.class);
 
-        // Lock vẫn được release dù task fail
         verify(rLock).unlock();
     }
 }

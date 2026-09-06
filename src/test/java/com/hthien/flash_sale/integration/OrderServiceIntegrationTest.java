@@ -1,64 +1,37 @@
-package com.hthien.flash_sale;
+package com.hthien.flash_sale.integration;
 
 import static org.assertj.core.api.Assertions.*;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.*;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.*;
 
 import com.hthien.flash_sale.dto.request.CreateOrderRequest;
 import com.hthien.flash_sale.dto.response.OrderResponse;
-import com.hthien.flash_sale.entity.*;
+import com.hthien.flash_sale.entity.Inventory;
+import com.hthien.flash_sale.entity.Product;
 import com.hthien.flash_sale.enums.OrderStatus;
-import com.hthien.flash_sale.exception.*;
-import com.hthien.flash_sale.repository.*;
-import com.hthien.flash_sale.service.*;
+import com.hthien.flash_sale.exception.DuplicateOrderException;
+import com.hthien.flash_sale.exception.InsufficientStockException;
+import com.hthien.flash_sale.exception.ProductNotFoundException;
+import com.hthien.flash_sale.repository.InventoryRepository;
+import com.hthien.flash_sale.repository.OrderRepository;
+import com.hthien.flash_sale.repository.ProductRepository;
+import com.hthien.flash_sale.service.OrderService;
 
-@SpringBootTest
-@Testcontainers
-class OrderServiceTest {
+class OrderServiceIntegrationTest extends BaseIntegrationTest {
 
-    @Container
-    static PostgreSQLContainer<?> postgres =
-        new PostgreSQLContainer<>("postgres:16")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @Container
-    static GenericContainer<?> redis =
-        new GenericContainer<>("redis:7-alpine")
-            .withExposedPorts(6379);
-
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.flyway.enabled", () -> "true");
-        registry.add("spring.data.redis.host", redis::getHost);
-        registry.add("spring.data.redis.port", redis::getFirstMappedPort);
-    }
-
-    @Autowired OrderService orderService;
-    @Autowired ProductRepository productRepository;
-    @Autowired InventoryRepository inventoryRepository;
-    @Autowired OrderRepository orderRepository;
+    @Autowired private OrderService orderService;
 
     private Product testProduct;
 
     @BeforeEach
     void setUp() {
-        // Clear data giữa các test — tránh test phụ thuộc nhau
-        orderRepository.deleteAll();
-        inventoryRepository.deleteAll();
-        productRepository.deleteAll();
+        cleanDatabase();
 
         testProduct = productRepository.save(
             Product.builder()
@@ -75,9 +48,8 @@ class OrderServiceTest {
         );
     }
 
-    // TEST 1: Mua thành công
     @Test
-    @DisplayName("Mua hàng thành công — stock đủ, giảm đúng số lượng")
+    @DisplayName("Create Order — with sufficient stock, should succeed and decrement inventory")
     void createOrder_withSufficientStock_shouldSucceed() {
         CreateOrderRequest request = buildRequest(1, "NONE");
 
@@ -87,16 +59,13 @@ class OrderServiceTest {
         assertThat(response.getItems()).hasSize(1);
         assertThat(response.getItems().get(0).getQuantity()).isEqualTo(1);
 
-        // Verify stock thực sự giảm trong DB
         Inventory updated = inventoryRepository.findByProductId(testProduct.getId()).get();
-        assertThat(updated.getStock()).isEqualTo(4); // 5 - 1 = 4
+        assertThat(updated.getStock()).isEqualTo(4);
     }
 
-    // TEST 2: Hết hàng
     @Test
-    @DisplayName("Mua hàng thất bại — stock = 0, ném InsufficientStockException")
+    @DisplayName("Create Order — with zero stock, should throw InsufficientStockException")
     void createOrder_withZeroStock_shouldThrow() {
-        // Reset stock về 0
         Inventory inventory = inventoryRepository.findByProductId(testProduct.getId()).get();
         inventory.setStock(0);
         inventoryRepository.save(inventory);
@@ -106,16 +75,13 @@ class OrderServiceTest {
         assertThatThrownBy(() -> orderService.createOrder(request, null))
             .isInstanceOf(InsufficientStockException.class);
 
-        // Stock không thay đổi
-        assertThat(inventoryRepository.findByProductId(testProduct.getId())
-            .get().getStock()).isEqualTo(0);
+        assertThat(inventoryRepository.findByProductId(testProduct.getId()).get().getStock()).isEqualTo(0);
     }
 
-    // TEST 3: Idempotency — 2 request cùng key → 1 order, stock trừ 1 lần
     @Test
-    @DisplayName("Idempotency — 2 request cùng key → chỉ tạo 1 order, stock chỉ trừ 1 lần")
+    @DisplayName("Idempotency — duplicate requests with same idempotency key return same order without double decrement")
     void createOrder_withSameIdempotencyKey_shouldReturnSameOrder() {
-        String key = "idem-key-" + java.util.UUID.randomUUID();
+        String key = "idem-key-" + UUID.randomUUID();
         CreateOrderRequest request = buildRequest(1, "NONE");
 
         OrderResponse first = orderService.createOrder(request, key);
@@ -125,17 +91,14 @@ class OrderServiceTest {
             DuplicateOrderException.class
         );
 
-        // Cùng order ID
         assertThat(ex.getExistingOrder().getId()).isEqualTo(first.getId());
 
-        // Stock chỉ trừ 1 lần dù gọi 2 lần
         Inventory updated = inventoryRepository.findByProductId(testProduct.getId()).get();
-        assertThat(updated.getStock()).isEqualTo(4); // 5 - 1, không phải 3
+        assertThat(updated.getStock()).isEqualTo(4);
     }
 
-    // TEST 4: Product không tồn tại
     @Test
-    @DisplayName("Product không tồn tại → ProductNotFoundException")
+    @DisplayName("Create Order — non-existent product throws ProductNotFoundException")
     void createOrder_withNonExistentProduct_shouldThrow() {
         CreateOrderRequest request = new CreateOrderRequest();
         request.setProductId(999999L);
@@ -146,9 +109,8 @@ class OrderServiceTest {
             .isInstanceOf(ProductNotFoundException.class);
     }
 
-    // TEST 5: LockMode không hợp lệ
     @Test
-    @DisplayName("LockMode không hợp lệ → IllegalArgumentException")
+    @DisplayName("Create Order — invalid lockMode throws IllegalArgumentException")
     void createOrder_withInvalidLockMode_shouldThrow() {
         CreateOrderRequest request = buildRequest(1, "INVALID_MODE");
 
@@ -157,21 +119,17 @@ class OrderServiceTest {
             .hasMessageContaining("Invalid lockMode");
     }
 
-    // TEST 6: Snapshot price
     @Test
-    @DisplayName("OrderItem lưu snapshot price tại thời điểm mua")
+    @DisplayName("Create Order — correctly snapshots unit price and calculates total price")
     void createOrder_shouldSnapshotPrice() {
         CreateOrderRequest request = buildRequest(2, "NONE");
 
         OrderResponse response = orderService.createOrder(request, null);
 
-        assertThat(response.getItems().get(0).getUnitPrice())
-            .isEqualByComparingTo("29990000");
-        assertThat(response.getItems().get(0).getTotalPrice())
-            .isEqualByComparingTo("59980000"); // 29990000 * 2
+        assertThat(response.getItems().get(0).getUnitPrice()).isEqualByComparingTo("29990000");
+        assertThat(response.getItems().get(0).getTotalPrice()).isEqualByComparingTo("59980000");
     }
 
-    // Helper
     private CreateOrderRequest buildRequest(int quantity, String lockMode) {
         CreateOrderRequest request = new CreateOrderRequest();
         request.setProductId(testProduct.getId());
