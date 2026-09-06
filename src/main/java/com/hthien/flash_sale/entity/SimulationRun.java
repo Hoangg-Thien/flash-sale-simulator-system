@@ -22,12 +22,18 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "simulation_runs")
-@Data
+@Getter
+@Setter
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -35,6 +41,8 @@ public class SimulationRun {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -42,6 +50,7 @@ public class SimulationRun {
     private Product product;
 
     @Column(name = "initial_stock", nullable = false)
+    @ToString.Include
     private Integer initialStock;
 
     @Column(name = "concurrent_users", nullable = false)
@@ -61,9 +70,11 @@ public class SimulationRun {
     private Integer finalStock; // stock sau khi chay
 
     @Column(name = "success_count")
+    @ToString.Include
     private Integer successCount;
 
     @Column(name = "failed_count")
+    @ToString.Include
     private Integer failedCount;
 
     @Column(name = "overselling_detected", nullable = false)

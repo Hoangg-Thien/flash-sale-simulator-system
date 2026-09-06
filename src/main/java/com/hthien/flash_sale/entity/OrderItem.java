@@ -12,13 +12,19 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "order_items")
-@Data
+@Getter
+@Setter
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -26,6 +32,8 @@ public class OrderItem {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -37,8 +45,10 @@ public class OrderItem {
     private Product product;
 
     @Column(nullable = false)
+    @ToString.Include
     private Integer quantity;
 
     @Column(name = "unit_price", nullable = false, precision = 12, scale = 2)
+    @ToString.Include
     private BigDecimal unitPrice;
 }

@@ -23,8 +23,11 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "orders", indexes = {
@@ -33,7 +36,10 @@ import lombok.NoArgsConstructor;
         unique = true
     )}
 )
-@Data
+@Getter
+@Setter
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -41,6 +47,8 @@ public class Order {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -49,25 +57,32 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
+    @ToString.Include
     private OrderStatus orderStatus;
 
     @Column(name = "idempotency_key", unique = true, length = 64)
+    @ToString.Include
     private String idempotencyKey;
 
     @Enumerated(EnumType.STRING)
+    @ToString.Include
     @Column(name = "lock_mode", nullable = false, length = 20)
     private LockMode lockMode;
 
     @Column(name = "requested_at", nullable = false)
+    @ToString.Include
     private Instant requestedAt;
 
     @Column(name = "completed_at")
+    @ToString.Include
     private Instant completedAt;
 
     @Column(name = "latency_ms")
+    @ToString.Include
     private Long latencyMs;
 
     @Column(name = "error_message", length = 255)
+    @ToString.Include
     private String errorMessage;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

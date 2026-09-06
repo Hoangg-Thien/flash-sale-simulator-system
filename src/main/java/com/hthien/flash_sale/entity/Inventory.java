@@ -19,15 +19,21 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "inventory", uniqueConstraints = @UniqueConstraint(
     name = "uq_inventory_product_id", columnNames = "product_id"
     )
 )
-@Data
+@Getter
+@Setter
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -35,6 +41,8 @@ public class Inventory {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -44,10 +52,12 @@ public class Inventory {
     @NotNull(message = "Quantity is required")
     @Min(value = 0, message = "Stock must be >= 0")
     @Column(nullable = false)
+    @ToString.Include
     private Integer stock;
 
     @Version
     @Builder.Default
+    @ToString.Include
     private Long version = 0L;
 
     @Column(name = "update_at", nullable = false)

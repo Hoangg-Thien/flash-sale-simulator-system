@@ -16,8 +16,11 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "simulation_requests",
@@ -25,7 +28,10 @@ import lombok.NoArgsConstructor;
     columnList = "simulation_run_id"
     )
 )
-@Data
+@Getter
+@Setter
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -33,6 +39,8 @@ public class SimulationRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -41,6 +49,7 @@ public class SimulationRequest {
 
     // Thread nào trong số N thread đã chạy (0-indexed)
     @Column(name = "thread_index", nullable = false)
+    @ToString.Include
     private Integer threadIndex;
 
     @Enumerated(EnumType.STRING)
@@ -50,6 +59,7 @@ public class SimulationRequest {
     @Column(name = "latency_ms")
     private Long latencyMs;
 
+    @ToString.Include
     @Column(name = "http_status")
     private Integer httpStatus;
 
