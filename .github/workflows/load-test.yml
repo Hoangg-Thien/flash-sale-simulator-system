@@ -1,0 +1,98 @@
+name: K6 Performance & Load Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Select K6 Test Scenario to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'smoke'
+          - 'none'
+          - 'optimistic'
+          - 'pessimistic'
+          - 'redis'
+          - 'comparison'
+
+jobs:
+  k6-load-test:
+    name: Run K6 Load Test (${{ github.event.inputs.test_mode }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start Database, Redis and Application via Docker Compose
+        run: |
+          docker compose up -d --build
+
+      - name: Wait for Application Healthcheck (Spring Boot UP)
+        run: |
+          echo "Waiting for http://localhost:8080/actuator/health to be UP..."
+          timeout 120s bash -c 'until curl -sf http://localhost:8080/actuator/health | grep -q "\"status\":\"UP\""; do
+            echo "Waiting for app to be ready..."
+            sleep 3
+          done'
+          echo "Application is UP and Healthy!"
+
+      - name: Install K6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Execute K6 Load Test Scenario
+        run: |
+          mkdir -p load-test/results
+          chmod +x load-test/run-all.sh
+          
+          case "${{ github.event.inputs.test_mode }}" in
+            "all")
+              bash load-test/run-all.sh
+              ;;
+            "smoke")
+              k6 run --env BASE_URL="http://localhost:8080" --out json="load-test/results/smoke.json" load-test/smoke-test.js
+              ;;
+            "none")
+              k6 run --env BASE_URL="http://localhost:8080" --out json="load-test/results/none.json" load-test/purchase-none.js
+              ;;
+            "optimistic")
+              k6 run --env BASE_URL="http://localhost:8080" --out json="load-test/results/optimistic.json" load-test/purchase-optimistic.js
+              ;;
+            "pessimistic")
+              k6 run --env BASE_URL="http://localhost:8080" --out json="load-test/results/pessimistic.json" load-test/purchase-pessimistic.js
+              ;;
+            "redis")
+              k6 run --env BASE_URL="http://localhost:8080" --out json="load-test/results/redis.json" load-test/purchase-redis.js
+              ;;
+            "comparison")
+              k6 run --env BASE_URL="http://localhost:8080" --out json="load-test/results/comparison.json" load-test/comparison.js
+              ;;
+            *)
+              echo "Unknown mode: ${{ github.event.inputs.test_mode }}"
+              exit 1
+              ;;
+          esac
+
+      - name: Upload K6 Benchmark Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-test-results
+          path: load-test/results/
+          retention-days: 14
+
+      - name: Teardown Docker Containers
+        if: always()
+        run: |
+          docker compose down -v
