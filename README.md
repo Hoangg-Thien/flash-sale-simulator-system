@@ -124,6 +124,9 @@ PESSIMISTIC     0             NO        (lock prevents oversell)
 REDIS           0             NO        (lock prevents oversell)
 ═══════════════════════════════════════════════════════════════
 ```
+### Multi-Instance Distributed Lock Verification:
+- Hướng dẫn chi tiết chạy 2 instance (Port 8080 & 8081) để chứng minh Redis Lock hoạt động xuyên JVM:  
+**[Multi-Instance Testing Guide](multi-instance.md)**
 
 ## Dừng services
 
