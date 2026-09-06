@@ -111,6 +111,8 @@ bash load-test/run-all.sh
 
 ### Kết quả K6 Benchmark thực tế (20 Concurrent VUs):
 
+**Bằng chứng dữ liệu đo thực tế**: Chi tiết raw metrics được lưu tại thư mục [`load-test/results/`](load-test/results/)
+
 ```text
 ═══════════════════════════════════════════════════════════════
      FLASH SALE — K6 LOAD TEST COMPARISON RESULTS              
