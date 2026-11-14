@@ -106,7 +106,7 @@ class LockStrategyUnitTest {
         when(inventoryRepository.save(any(Inventory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         RedisLockStrategy strategy = new RedisLockStrategy(redissonClient, inventoryRepository);
-        Inventory result = strategy.deductStock(1L, 1);
+        Inventory result = strategy.around(1L, () -> strategy.deductStock(1L, 1));
 
         assertThat(result.getStock()).isEqualTo(9);
         verify(rLock).unlock();
@@ -120,7 +120,7 @@ class LockStrategyUnitTest {
 
         RedisLockStrategy strategy = new RedisLockStrategy(redissonClient, inventoryRepository);
 
-        assertThatThrownBy(() -> strategy.deductStock(1L, 1))
+        assertThatThrownBy(() -> strategy.around(1L, () -> strategy.deductStock(1L, 1)))
             .isInstanceOf(LockAcquisitionException.class);
 
         verify(inventoryRepository, never()).findByProductId(any());
@@ -136,7 +136,7 @@ class LockStrategyUnitTest {
 
         RedisLockStrategy strategy = new RedisLockStrategy(redissonClient, inventoryRepository);
 
-        assertThatThrownBy(() -> strategy.deductStock(1L, 1))
+        assertThatThrownBy(() -> strategy.around(1L, () -> strategy.deductStock(1L, 1)))
             .isInstanceOf(ProductNotFoundException.class);
 
         verify(rLock).unlock();

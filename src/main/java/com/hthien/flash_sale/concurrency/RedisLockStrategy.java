@@ -1,6 +1,7 @@
 package com.hthien.flash_sale.concurrency;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -31,7 +32,18 @@ public class RedisLockStrategy implements InventoryLockStrategy{
 
     @Override
     public Inventory deductStock(Long productId, int quantity){
+        Inventory inventory = inventoryRepository.findByProductId(productId)
+            .orElseThrow(() -> new ProductNotFoundException(productId));
 
+        if(inventory.getStock() < quantity){
+            throw new InsufficientStockException(productId, quantity, inventory.getStock());
+        }
+        inventory.setStock(inventory.getStock() - quantity);
+        return inventoryRepository.save(inventory);
+    }
+
+    @Override
+    public <T> T around(Long productId, Supplier<T> transactionalWork) {
         String lockKey = LOCK_KEY_PREFIX + productId;
         RLock lock = redissonClient.getLock(lockKey);
 
@@ -47,14 +59,8 @@ public class RedisLockStrategy implements InventoryLockStrategy{
             throw new LockAcquisitionException(productId);
         }
         try {
-            Inventory inventory = inventoryRepository.findByProductId(productId)
-            .orElseThrow(() -> new ProductNotFoundException(productId));
-
-            if(inventory.getStock() < quantity){
-                throw new InsufficientStockException(productId, quantity, inventory.getStock());
-            }
-            inventory.setStock(inventory.getStock() - quantity);
-            return inventoryRepository.save(inventory);
+            // TransactionTemplate completes commit/rollback before this returns.
+            return transactionalWork.get();
         } finally {
             if(lock.isHeldByCurrentThread()){
                 lock.unlock();

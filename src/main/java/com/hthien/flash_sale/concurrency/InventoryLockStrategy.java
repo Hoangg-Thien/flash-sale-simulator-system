@@ -1,6 +1,9 @@
 package com.hthien.flash_sale.concurrency;
 
+import java.util.function.Supplier;
+
 import com.hthien.flash_sale.entity.Inventory;
+
 public interface InventoryLockStrategy {
 
     /**
@@ -10,5 +13,11 @@ public interface InventoryLockStrategy {
     * @param quantity  Số lượng muốn mua
     * @return Inventory sau khi đã trừ kho thành công
     */
+    // Runs inside the transaction supplied to around().
     Inventory deductStock(Long productId, int quantity);
+
+    /** Wraps the whole transaction; database lock strategies need no wrapping. */
+    default <T> T around(Long productId, Supplier<T> transactionalWork) {
+        return transactionalWork.get();
+    }
 }

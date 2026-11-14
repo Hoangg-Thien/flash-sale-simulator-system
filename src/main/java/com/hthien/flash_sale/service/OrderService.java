@@ -55,7 +55,7 @@ public class OrderService {
 
         // 4. Trừ kho và tạo Order trong Transaction
         try {
-            return transactionTemplate.execute(status -> {
+            return strategy.around(request.getProductId(), () -> transactionTemplate.execute(status -> {
                 // Strategy trừ kho theo cơ chế riêng của nó (NoLock, Optimistic, Pessimistic, Redis)
                 strategy.deductStock(request.getProductId(), request.getQuantity());
 
@@ -92,7 +92,7 @@ public class OrderService {
                     throw new DuplicateOrderException(existingOrder);
                 }
                 return OrderResponse.from(order);
-            });
+            }));
 
         } catch (InsufficientStockException | LockAcquisitionException | DuplicateOrderException e) {
             throw e;
