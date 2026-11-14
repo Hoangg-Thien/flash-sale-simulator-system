@@ -1,7 +1,7 @@
 # Run from the repository root after clean package, compose startup and warm-up.
-# This resets only the dedicated flashsale-phase0 benchmark database and Redis.
+# This resets only the dedicated flashsale-redis-baseline benchmark database and Redis.
 $ErrorActionPreference = 'Continue'
-$compose = @('-p', 'flashsale-phase0', '-f', 'load-test/results/redis-lock-baseline/compose.yml')
+$compose = @('-p', 'flashsale-redis-baseline', '-f', 'load-test/results/redis-lock-baseline/compose.yml')
 $results = 'load-test/results/redis-lock-baseline'
 
 function Reset-Benchmark {

@@ -1,17 +1,17 @@
-# Phase 0 baseline — 2026-11-14 (Asia/Bangkok)
+# Môi trường đo kết quả cơ sở cho khóa Redis — 2026-11-14 (Asia/Bangkok)
 
-- Starting commit: `02f2d99d1cf0a64a1fa8083a488fe215549ff025`; branch `feature/hardening`, with the uncommitted Phase 0 fix. No commit or push performed.
-- Host: Windows 11 x64, AMD Ryzen 5 7535HS, 6 cores / 12 logical CPUs, 15.32 GiB RAM. Docker Desktop Linux engine 29.6.2: 12 CPUs, 7,968,628,736 bytes RAM available. VS Code and other desktop processes remained running; laptop measurements are not production capacity estimates.
-- Build/tests: Oracle JDK 21.0.2, Maven wrapper 3.9.16. Application runtime: Temurin 21.0.13+9, `-XX:MaxRAMPercentage=75.0`.
-- PostgreSQL 17.9; Redis 7.4.11; k6 2.2.0 (`00a9a1b7f5`, Go 1.26.5, native Windows amd64). Integration tests use the existing PostgreSQL 16 / Redis 7 Testcontainers configuration.
-- Single application instance at `http://127.0.0.1:18080`. Dedicated Compose project `flashsale-phase0`, no local database or existing Compose volumes used. See [compose.yml](compose.yml).
-- Container limits: app 2 CPUs / 1 GiB; PostgreSQL 2 CPUs / 1 GiB; Redis 1 CPU / 256 MiB. k6 runs on the host without a CPU/memory cap. SQL logging disabled and root/Hibernate SQL logging at WARN for all benchmark runs.
-- Script: unchanged `load-test/comparison.js`, one product per mode, initial stock **5**, quantity **1**, peak **20 VUs**. Each mode ramps up 3s, holds 15s, ramps down 3s; starts at 0/25/50/75s, total nominal 96s. Modes: NONE, OPTIMISTIC, PESSIMISTIC, REDIS.
-- One full comparison warm-up, then three measured comparisons, sequentially. Benchmark tables truncated and identities reset, dedicated Redis DB flushed between measured runs. JVM stays running. No integration tests run concurrently with the measurements.
-- Raw event output is gzip-compressed JSON Lines (`comparison-N.json.gz`), with k6 summary JSON, console output and independent database stock/order counts for every run. Nested results are visible to Git without changing the existing ignore policy. Historical ignored results from September remain untouched.
-- Tested JAR SHA-256: `8B29195AF781256A281358B942C7CBC31A0909457948D2934DB6B2063890EDD1`.
+- Commit bắt đầu: `02f2d99d1cf0a64a1fa8083a488fe215549ff025`; nhánh `feature/hardening`, kèm bản sửa Giai đoạn 0 chưa được commit tại thời điểm đo. Không tạo commit hoặc đẩy mã lên kho từ xa trong quá trình thực hiện.
+- Máy chủ chạy thử: Windows 11 x64, AMD Ryzen 5 7535HS, 6 nhân / 12 CPU logic, RAM 15.32 GiB. Docker Desktop dùng bộ máy Linux phiên bản 29.6.2: 12 CPU, RAM khả dụng 7,968,628,736 byte. VS Code và các ứng dụng khác vẫn chạy; số đo trên máy cá nhân không đại diện cho năng lực phục vụ của môi trường vận hành thực tế.
+- Biên dịch và kiểm thử: Oracle JDK 21.0.2, Maven wrapper 3.9.16. Môi trường chạy ứng dụng: Temurin 21.0.13+9, `-XX:MaxRAMPercentage=75.0`.
+- PostgreSQL 17.9; Redis 7.4.11; k6 2.2.0 (`00a9a1b7f5`, Go 1.26.5, chạy trực tiếp trên Windows amd64). Kiểm thử tích hợp dùng cấu hình Testcontainers PostgreSQL 16 / Redis 7 có sẵn.
+- Một phiên ứng dụng tại `http://127.0.0.1:18080`. Tên dự án Compose dùng khi chạy lại là `flashsale-redis-baseline`, không dùng cơ sở dữ liệu cục bộ hoặc vùng lưu trữ Compose có sẵn. Xem [compose.yml](compose.yml).
+- Giới hạn tài nguyên: ứng dụng 2 CPU / 1 GiB; PostgreSQL 2 CPU / 1 GiB; Redis 1 CPU / 256 MiB. k6 chạy trên máy chủ, không giới hạn CPU/bộ nhớ. Tắt việc in câu lệnh SQL; mức ghi nhật ký gốc và SQL của Hibernate đều là WARN trong mọi lượt đo.
+- Kịch bản: `load-test/comparison.js` được giữ nguyên tại thời điểm đo, mỗi chế độ dùng một sản phẩm, tồn kho ban đầu **5**, số lượng mua **1**, tối đa **20 người dùng ảo (VUs)**. Mỗi chế độ tăng tải 3 giây, giữ tải 15 giây, giảm tải 3 giây; bắt đầu ở giây 0/25/50/75, tổng thời gian dự kiến 96 giây. Các chế độ: NONE, OPTIMISTIC, PESSIMISTIC, REDIS.
+- Chạy một lượt so sánh đầy đủ để làm nóng, sau đó đo ba lượt so sánh liên tiếp. Xóa dữ liệu các bảng dùng để đo, đặt lại bộ đếm định danh và xóa dữ liệu Redis riêng giữa các lượt đo. JVM tiếp tục chạy. Không chạy kiểm thử tích hợp đồng thời với quá trình đo.
+- Dữ liệu sự kiện gốc được lưu dưới dạng JSON Lines nén gzip (`comparison-N.json.gz`), kèm JSON tổng hợp của k6, đầu ra dòng lệnh và số đếm tồn kho/đơn hàng độc lập từ cơ sở dữ liệu cho từng lượt. Git nhận diện các kết quả trong thư mục con mà không cần đổi quy tắc bỏ qua có sẵn. Các kết quả từ tháng 9 vốn bị Git bỏ qua được giữ nguyên.
+- SHA-256 của tệp JAR đã kiểm thử: `8B29195AF781256A281358B942C7CBC31A0909457948D2934DB6B2063890EDD1`.
 
-Image digests used:
+Mã định danh nội dung các ảnh container đã dùng:
 
 ```text
 eclipse-temurin@sha256:ac05c3c42b7c2f1a52c9bd52f01041fa1958231b15ebeae7420429cbc5baf474
@@ -19,23 +19,23 @@ postgres@sha256:b994732fcf33f73776c65d3a5bf1f80c00120ba5007e8ab90307b1a743c1fc16
 redis@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
 ```
 
-## Reproduce
+## Cách chạy lại
 
-From the repository root, with Docker Desktop and k6 running/installed:
+Thực hiện tại thư mục gốc của kho mã, sau khi cài k6 và khởi động Docker Desktop:
 
 ```powershell
 .\mvnw.cmd clean package
-docker compose -p flashsale-phase0 -f load-test/results/redis-lock-baseline/compose.yml up -d
-# Wait until GET http://127.0.0.1:18080/actuator/health returns UP.
+docker compose -p flashsale-redis-baseline -f load-test/results/redis-lock-baseline/compose.yml up -d
+# Chờ GET http://127.0.0.1:18080/actuator/health trả về UP.
 k6 run --quiet --env BASE_URL=http://127.0.0.1:18080 load-test/comparison.js
 powershell -NoProfile -File load-test/results/redis-lock-baseline/run-baseline.ps1
-docker compose -p flashsale-phase0 -f load-test/results/redis-lock-baseline/compose.yml down -v
+docker compose -p flashsale-redis-baseline -f load-test/results/redis-lock-baseline/compose.yml down -v
 ```
 
-Archive existing Phase 0 output before reproducing: the scripts overwrite run files; `run-status.txt` appends statuses. Pin the image digests above to reproduce these exact runtime versions.
+Sao lưu đầu ra Giai đoạn 0 trước khi chạy lại: các kịch bản ghi đè tệp kết quả; riêng `run-status.txt` được ghi nối tiếp. Cố định ảnh container theo các mã định danh ở trên để tái tạo đúng phiên bản môi trường đã dùng.
 
-## Interpretation limits
+## Giới hạn khi diễn giải kết quả
 
-The original comparison script determines overselling only from negative stock. Lost updates in NONE can produce too many orders while stock stays nonnegative. The saved `*-stock.csv` files independently count committed successful orders; safe modes must satisfy `confirmed + final_stock = 5` and `final_stock >= 0`.
+Kịch bản so sánh ban đầu chỉ xác định việc bán vượt tồn kho thông qua giá trị tồn kho âm. Lỗi ghi đè làm mất cập nhật trong NONE có thể tạo quá nhiều đơn trong khi tồn kho vẫn không âm. Các tệp `*-stock.csv` đếm độc lập số đơn thành công đã được ghi nhận trong cơ sở dữ liệu; các chế độ an toàn phải thỏa `confirmed + final_stock = 5` và `final_stock >= 0`.
 
-Five units sell out near the beginning of each mode, so most requests measure rejection/sold-out handling. OPTIMISTIC conflicts can reject purchases while stock is still available; sustained retries in this workload can hide that effect. This is the requested existing-script baseline, not the Phase 5 benchmark matrix or proof of multi-instance correctness. The script's response callback also classifies setup/reset/teardown HTTP 200 responses as unexpected; those few requests appear in the built-in error rate even when purchase responses are correct.
+Năm đơn vị tồn kho được bán hết gần đầu mỗi chế độ, nên phần lớn yêu cầu đo việc từ chối mua khi hết hàng. Xung đột OPTIMISTIC có thể khiến yêu cầu bị từ chối trong khi vẫn còn hàng; việc tiếp tục gửi yêu cầu trong kịch bản này có thể che khuất hiện tượng đó. Đây là kết quả cơ sở của kịch bản có sẵn theo yêu cầu, chưa phải ma trận đo của Giai đoạn 5 hoặc bằng chứng về tính đúng đắn khi chạy nhiều phiên ứng dụng. Hàm phân loại phản hồi của kịch bản cũng coi các phản hồi HTTP 200 khi chuẩn bị/đặt lại/dọn dẹp là ngoài dự kiến; các yêu cầu này vẫn xuất hiện trong tỷ lệ lỗi có sẵn của k6 dù phản hồi mua hàng đúng.
