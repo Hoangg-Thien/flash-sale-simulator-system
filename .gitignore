@@ -37,6 +37,16 @@ build/
 
 # Env
 .env
+.env.*
+!.env.example
+
+# Local reference document
+/detai.pdf
+
+# JVM diagnostics
+hs_err_pid*.log
+replay_pid*.log
+*.hprof
 
 # OS files
 .DS_Store
@@ -45,3 +55,6 @@ Thumbs.db
 # K6 Load Test Results
 load-test/results/*.json
 load-test/results/*.html
+
+# Verbose local test reports; keep the Redis lock baseline evidence
+/load-test/results/redis-lock-baseline/ordering-*.xml
