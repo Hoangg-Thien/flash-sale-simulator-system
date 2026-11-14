@@ -1,0 +1,43 @@
+> D:\flash-sale-platform\phase0-red.log:3457:[ERROR] Failures: 
+  D:\flash-sale-platform\phase0-red.log:3458:[ERROR]   RedisLockTransactionIntegrationTest.redisLock_mustCoverTransactionCompletion:98 
+  D:\flash-sale-platform\phase0-red.log:3459:Expecting actual:
+  D:\flash-sale-platform\phase0-red.log:3460:  ["LOCKED", "UNLOCKED", "COMMITTED"]
+  D:\flash-sale-platform\phase0-red.log:3461:to contain exactly (and in same order):
+  D:\flash-sale-platform\phase0-red.log:3462:  ["LOCKED", "COMMITTED", "UNLOCKED"]
+  D:\flash-sale-platform\phase0-red.log:3463:but there were differences at these indexes:
+  D:\flash-sale-platform\phase0-red.log:3464:  - element at index 1: expected "COMMITTED" but was "UNLOCKED"
+  D:\flash-sale-platform\phase0-red.log:3465:  - element at index 2: expected "UNLOCKED" but was "COMMITTED"
+  D:\flash-sale-platform\phase0-red.log:3466:
+  D:\flash-sale-platform\phase0-red.log:3467:[ERROR]   RedisLockTransactionIntegrationTest.redisLock_mustCoverTransactionCompletion:98 
+  D:\flash-sale-platform\phase0-red.log:3468:Expecting actual:
+  D:\flash-sale-platform\phase0-red.log:3469:  ["LOCKED", "UNLOCKED", "ROLLED_BACK"]
+  D:\flash-sale-platform\phase0-red.log:3470:to contain exactly (and in same order):
+  D:\flash-sale-platform\phase0-red.log:3471:  ["LOCKED", "ROLLED_BACK", "UNLOCKED"]
+  D:\flash-sale-platform\phase0-red.log:3472:but there were differences at these indexes:
+  D:\flash-sale-platform\phase0-red.log:3473:  - element at index 1: expected "ROLLED_BACK" but was "UNLOCKED"
+  D:\flash-sale-platform\phase0-red.log:3474:  - element at index 2: expected "UNLOCKED" but was "ROLLED_BACK"
+  D:\flash-sale-platform\phase0-red.log:3475:
+  D:\flash-sale-platform\phase0-red.log:3476:[ERROR]   RedisLockTransactionIntegrationTest.redisLock_mustCoverTransactionCompletion:98 
+  D:\flash-sale-platform\phase0-red.log:3477:Expecting actual:
+  D:\flash-sale-platform\phase0-red.log:3478:  ["LOCKED", "UNLOCKED", "ROLLED_BACK"]
+  D:\flash-sale-platform\phase0-red.log:3479:to contain exactly (and in same order):
+  D:\flash-sale-platform\phase0-red.log:3480:  ["LOCKED", "ROLLED_BACK", "UNLOCKED"]
+  D:\flash-sale-platform\phase0-red.log:3481:but there were differences at these indexes:
+  D:\flash-sale-platform\phase0-red.log:3482:  - element at index 1: expected "ROLLED_BACK" but was "UNLOCKED"
+  D:\flash-sale-platform\phase0-red.log:3483:  - element at index 2: expected "UNLOCKED" but was "ROLLED_BACK"
+  D:\flash-sale-platform\phase0-red.log:3484:
+  D:\flash-sale-platform\phase0-red.log:3485:[INFO] 
+  D:\flash-sale-platform\phase0-red.log:3486:[ERROR] Tests run: 3, Failures: 3, Errors: 0, Skipped: 0
+  D:\flash-sale-platform\phase0-red.log:3487:[INFO] 
+  D:\flash-sale-platform\phase0-red.log:3488:[INFO] ------------------------------------------------------------------------
+  D:\flash-sale-platform\phase0-red.log:3489:[INFO] BUILD FAILURE
+  D:\flash-sale-platform\phase0-red.log:3490:[INFO] ------------------------------------------------------------------------
+  D:\flash-sale-platform\phase0-red.log:3491:[INFO] Total time:  23.045 s
+  D:\flash-sale-platform\phase0-red.log:3492:[INFO] Finished at: 2026-11-14T20:45:08+07:00
+  D:\flash-sale-platform\phase0-red.log:3493:[INFO] ------------------------------------------------------------------------
+  D:\flash-sale-platform\phase0-red.log:3494:[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.5:test (default-test) on project flash-sale: There are test failures.
+  D:\flash-sale-platform\phase0-red.log:3495:[ERROR] 
+  D:\flash-sale-platform\phase0-red.log:3496:[ERROR] See D:\flash-sale-platform\target\surefire-reports for the individual test results.
+  D:\flash-sale-platform\phase0-red.log:3497:[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+  D:\flash-sale-platform\phase0-red.log:3498:[ERROR] -> [Help 1]
+  D:\flash-sale-platform\phase0-red.log:3499:[ERROR] 

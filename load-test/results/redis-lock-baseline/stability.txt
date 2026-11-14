@@ -1,0 +1,8 @@
+-------------------------------------------------------------------------------
+Test set: com.hthien.flash_sale.integration.ConcurrencyIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 30, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 27.47 s -- in com.hthien.flash_sale.integration.ConcurrencyIntegrationTest
+-------------------------------------------------------------------------------
+Test set: com.hthien.flash_sale.integration.SimulationServiceIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 30, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 24.96 s -- in com.hthien.flash_sale.integration.SimulationServiceIntegrationTest
