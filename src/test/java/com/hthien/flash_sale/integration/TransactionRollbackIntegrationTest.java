@@ -59,7 +59,7 @@ class TransactionRollbackIntegrationTest extends BaseIntegrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"NONE", "OPTIMISTIC", "PESSIMISTIC", "REDIS"})
+    @ValueSource(strings = {"NONE", "OPTIMISTIC", "PESSIMISTIC", "REDIS", "ATOMIC"})
     @DisplayName("Transaction Rollback — When OrderRepository throws exception, inventory stock decrement must roll back")
     void whenOrderSaveFails_transactionMustRollbackInventory(String lockMode) {
         // Arrange: Inject RuntimeException when saving the order entity
@@ -73,7 +73,8 @@ class TransactionRollbackIntegrationTest extends BaseIntegrationTest {
 
         // Act & Assert: Order creation must fail with an exception
         assertThatThrownBy(() -> orderService.createOrder(request, UUID.randomUUID().toString()))
-            .isInstanceOf(RuntimeException.class);
+            .isInstanceOf(RuntimeException.class)
+            .hasRootCauseMessage("Simulated Database I/O Failure during order save");
 
         // Verify: Inventory stock in PostgreSQL was NOT decremented (remains 10)
         Inventory inventoryAfterRollback = inventoryRepository.findByProductId(testProduct.getId()).orElseThrow();

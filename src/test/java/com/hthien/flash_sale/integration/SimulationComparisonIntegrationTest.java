@@ -56,9 +56,9 @@ class SimulationComparisonIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("COMPARISON: Run all 4 lock modes and verify comparison table")
+    @DisplayName("COMPARISON: Run all 5 lock modes and verify comparison table")
     void comparison_allLockModes_showDifference() {
-        List<String> modes = List.of("NONE", "OPTIMISTIC", "PESSIMISTIC", "REDIS");
+        List<String> modes = List.of("NONE", "OPTIMISTIC", "PESSIMISTIC", "REDIS", "ATOMIC");
         List<SimulationRunResponse> results = new ArrayList<>();
 
         for (String mode : modes) {
@@ -114,6 +114,7 @@ class SimulationComparisonIntegrationTest extends BaseIntegrationTest {
             assertThat(results.get(i).getSuccessCount())
                 .as("%s mode: exactly 1 purchase success when stock=1", modes.get(i))
                 .isEqualTo(1);
+            assertThat(results.get(i).getFinalStock()).isZero();
         }
     }
 }

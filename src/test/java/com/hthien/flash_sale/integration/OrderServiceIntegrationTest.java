@@ -8,6 +8,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.hthien.flash_sale.dto.request.CreateOrderRequest;
@@ -48,10 +50,11 @@ class OrderServiceIntegrationTest extends BaseIntegrationTest {
         );
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"NONE", "OPTIMISTIC", "PESSIMISTIC", "REDIS", "ATOMIC"})
     @DisplayName("Create Order — with sufficient stock, should succeed and decrement inventory")
-    void createOrder_withSufficientStock_shouldSucceed() {
-        CreateOrderRequest request = buildRequest(1, "NONE");
+    void createOrder_withSufficientStock_shouldSucceed(String lockMode) {
+        CreateOrderRequest request = buildRequest(1, lockMode);
 
         OrderResponse response = orderService.createOrder(request, null);
 
@@ -63,14 +66,15 @@ class OrderServiceIntegrationTest extends BaseIntegrationTest {
         assertThat(updated.getStock()).isEqualTo(4);
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"NONE", "OPTIMISTIC", "PESSIMISTIC", "REDIS", "ATOMIC"})
     @DisplayName("Create Order — with zero stock, should throw InsufficientStockException")
-    void createOrder_withZeroStock_shouldThrow() {
+    void createOrder_withZeroStock_shouldThrow(String lockMode) {
         Inventory inventory = inventoryRepository.findByProductId(testProduct.getId()).get();
         inventory.setStock(0);
         inventoryRepository.save(inventory);
 
-        CreateOrderRequest request = buildRequest(1, "NONE");
+        CreateOrderRequest request = buildRequest(1, lockMode);
 
         assertThatThrownBy(() -> orderService.createOrder(request, null))
             .isInstanceOf(InsufficientStockException.class);
@@ -78,11 +82,12 @@ class OrderServiceIntegrationTest extends BaseIntegrationTest {
         assertThat(inventoryRepository.findByProductId(testProduct.getId()).get().getStock()).isEqualTo(0);
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"NONE", "OPTIMISTIC", "PESSIMISTIC", "REDIS", "ATOMIC"})
     @DisplayName("Idempotency — duplicate requests with same idempotency key return same order without double decrement")
-    void createOrder_withSameIdempotencyKey_shouldReturnSameOrder() {
+    void createOrder_withSameIdempotencyKey_shouldReturnSameOrder(String lockMode) {
         String key = "idem-key-" + UUID.randomUUID();
-        CreateOrderRequest request = buildRequest(1, "NONE");
+        CreateOrderRequest request = buildRequest(1, lockMode);
 
         OrderResponse first = orderService.createOrder(request, key);
         
@@ -97,13 +102,14 @@ class OrderServiceIntegrationTest extends BaseIntegrationTest {
         assertThat(updated.getStock()).isEqualTo(4);
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"NONE", "OPTIMISTIC", "PESSIMISTIC", "REDIS", "ATOMIC"})
     @DisplayName("Create Order — non-existent product throws ProductNotFoundException")
-    void createOrder_withNonExistentProduct_shouldThrow() {
+    void createOrder_withNonExistentProduct_shouldThrow(String lockMode) {
         CreateOrderRequest request = new CreateOrderRequest();
         request.setProductId(999999L);
         request.setQuantity(1);
-        request.setLockMode("NONE");
+        request.setLockMode(lockMode);
 
         assertThatThrownBy(() -> orderService.createOrder(request, null))
             .isInstanceOf(ProductNotFoundException.class);
@@ -119,10 +125,11 @@ class OrderServiceIntegrationTest extends BaseIntegrationTest {
             .hasMessageContaining("Invalid lockMode");
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"NONE", "OPTIMISTIC", "PESSIMISTIC", "REDIS", "ATOMIC"})
     @DisplayName("Create Order — correctly snapshots unit price and calculates total price")
-    void createOrder_shouldSnapshotPrice() {
-        CreateOrderRequest request = buildRequest(2, "NONE");
+    void createOrder_shouldSnapshotPrice(String lockMode) {
+        CreateOrderRequest request = buildRequest(2, lockMode);
 
         OrderResponse response = orderService.createOrder(request, null);
 

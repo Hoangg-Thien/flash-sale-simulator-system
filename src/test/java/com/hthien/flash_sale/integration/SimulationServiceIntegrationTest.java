@@ -228,6 +228,17 @@ class SimulationServiceIntegrationTest extends BaseIntegrationTest {
         }
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {0, 1, 10})
+    void runSimulation_withAtomicUpdate_shouldSellExactlyAvailableStock(int stock) {
+        SimulationRunResponse response = simulationService.runSimulation(
+            buildSimRequest(testProduct.getId(), stock, 20, "ATOMIC"));
+        assertThat(response.getOversellingDetected()).isFalse();
+        assertThat(response.getSuccessCount()).isEqualTo(stock);
+        assertThat(response.getFailedCount()).isEqualTo(20 - stock);
+        assertThat(response.getFinalStock()).isZero();
+    }
+
     private CreateSimulationRequest buildSimRequest(
             Long productId, int initialStock, int concurrentUsers, String lockMode) {
         CreateSimulationRequest request = new CreateSimulationRequest();

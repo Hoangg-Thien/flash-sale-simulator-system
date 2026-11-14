@@ -152,5 +152,14 @@ class RedisFailureIntegrationTest {
         assertThat(inventoryRepository.findByProductId(testProduct.getId()).orElseThrow().getStock())
             .as("Pessimistic lock works directly on PostgreSQL without Redis dependency")
             .isEqualTo(5);
+
+        CreateOrderRequest atomicRequest = new CreateOrderRequest();
+        atomicRequest.setProductId(testProduct.getId());
+        atomicRequest.setQuantity(1);
+        atomicRequest.setLockMode("ATOMIC");
+        assertThat(orderService.createOrder(atomicRequest, UUID.randomUUID().toString())).isNotNull();
+        assertThat(inventoryRepository.findByProductId(testProduct.getId()).orElseThrow().getStock())
+            .as("ATOMIC works without Redis after an outage")
+            .isEqualTo(4);
     }
 }

@@ -4,5 +4,6 @@ public enum LockMode {
     NONE, 
     OPTIMISTIC, 
     PESSIMISTIC, 
-    REDIS
+    REDIS,
+    ATOMIC
 }

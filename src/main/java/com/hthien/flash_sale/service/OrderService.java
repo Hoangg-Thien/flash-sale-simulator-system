@@ -56,7 +56,7 @@ public class OrderService {
         // 4. Trừ kho và tạo Order trong Transaction
         try {
             return strategy.around(request.getProductId(), () -> transactionTemplate.execute(status -> {
-                // Strategy trừ kho theo cơ chế riêng của nó (NoLock, Optimistic, Pessimistic, Redis)
+                // Strategy trừ kho theo cơ chế riêng của nó.
                 strategy.deductStock(request.getProductId(), request.getQuantity());
 
                 // Tạo và lưu đơn hàng
@@ -137,6 +137,7 @@ public class OrderService {
             case OPTIMISTIC -> "optimisticLockStrategy";
             case PESSIMISTIC -> "pessimisticLockStrategy";
             case REDIS -> "redisLockStrategy";
+            case ATOMIC -> "atomicUpdateStrategy";
         };
         InventoryLockStrategy strategy = lockStrategies.get(beanName);
         if (strategy == null) {
@@ -150,7 +151,7 @@ public class OrderService {
             return LockMode.valueOf(lockModeStr.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
-                "Invalid lockMode: " + lockModeStr + ". Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS");
+                "Invalid lockMode: " + lockModeStr + ". Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS, ATOMIC");
         }
     }
 }

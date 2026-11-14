@@ -299,7 +299,7 @@ public class SimulationService {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
             "Invalid lockMode: " + lockModeStr +
-            ". Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS");
+            ". Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS, ATOMIC");
         }
     }
 }
