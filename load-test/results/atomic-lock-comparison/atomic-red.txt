@@ -1,0 +1,8 @@
+[ERROR]   AtomicStrategyIntegrationTest.concurrentAtomicOrders_stableAcrossRuns:123->runConcurrentOrders:151 ? Execution java.lang.IllegalArgumentException: Invalid lockMode: ATOMIC. Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS
+[ERROR]   AtomicStrategyIntegrationTest.concurrentAtomicOrders_stableAcrossRuns:123->runConcurrentOrders:151 ? Execution java.lang.IllegalArgumentException: Invalid lockMode: ATOMIC. Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS
+[ERROR]   AtomicStrategyIntegrationTest.concurrentAtomicOrders_stableAcrossRuns:123->runConcurrentOrders:151 ? Execution java.lang.IllegalArgumentException: Invalid lockMode: ATOMIC. Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS
+[ERROR]   AtomicStrategyIntegrationTest.concurrentAtomicOrders_stableAcrossRuns:123->runConcurrentOrders:151 ? Execution java.lang.IllegalArgumentException: Invalid lockMode: ATOMIC. Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS
+[ERROR]   AtomicStrategyIntegrationTest.concurrentAtomicOrders_stableAcrossRuns:123->runConcurrentOrders:151 ? Execution java.lang.IllegalArgumentException: Invalid lockMode: ATOMIC. Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS
+[ERROR]   AtomicStrategyIntegrationTest.concurrentAtomicOrders_stableAcrossRuns:123->runConcurrentOrders:151 ? Execution java.lang.IllegalArgumentException: Invalid lockMode: ATOMIC. Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS
+[ERROR]   AtomicStrategyIntegrationTest.concurrentAtomicOrders_stableAcrossRuns:123->runConcurrentOrders:151 ? Execution java.lang.IllegalArgumentException: Invalid lockMode: ATOMIC. Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS
+[ERROR] Tests run: 20, Failures: 3, Errors: 17, Skipped: 0

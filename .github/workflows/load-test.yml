@@ -15,6 +15,7 @@ on:
           - 'optimistic'
           - 'pessimistic'
           - 'redis'
+          - 'atomic'
           - 'comparison'
 
 jobs:
@@ -77,6 +78,9 @@ jobs:
               ;;
             "comparison")
               k6 run --env BASE_URL="http://localhost:8080" --out json="load-test/results/comparison.json" load-test/comparison.js
+              ;;
+            "atomic")
+              k6 run --env BASE_URL="http://localhost:8080" --out json="load-test/results/atomic.json" load-test/purchase-atomic.js
               ;;
             *)
               echo "Unknown mode: ${{ github.event.inputs.test_mode }}"

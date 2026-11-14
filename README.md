@@ -57,7 +57,7 @@ curl -X POST http://localhost:8080/api/v1/simulations \
   -d '{"productId": 1, "initialStock": 1, "concurrentUsers": 20, "lockMode": "PESSIMISTIC"}'
 
 # Bước 4: So sánh kết quả
-# oversellingDetected: true (NONE) vs false (PESSIMISTIC/OPTIMISTIC/REDIS)
+# oversellingDetected: true (NONE) vs false (PESSIMISTIC/OPTIMISTIC/REDIS/ATOMIC)
 ```
 
 ## Kiến trúc Locking Strategies
@@ -68,6 +68,7 @@ curl -X POST http://localhost:8080/api/v1/simulations \
 | `OPTIMISTIC` | `@Version` (Hibernate) |  DB | Low contention |
 | `PESSIMISTIC` | `SELECT FOR UPDATE` |  DB | High contention |
 | `REDIS` | Redisson Distributed Lock |  Redis | Multi-instance |
+| `ATOMIC` | Conditional SQL UPDATE, tăng version | DB | Trừ kho có điều kiện trong transaction |
 
 ## Chạy Tests
 
@@ -97,8 +98,9 @@ k6 run load-test/purchase-none.js          # Tái hiện Race condition (NONE)
 k6 run load-test/purchase-optimistic.js    # Optimistic locking (@Version)
 k6 run load-test/purchase-pessimistic.js   # Pessimistic locking (SELECT FOR UPDATE)
 k6 run load-test/purchase-redis.js         # Redisson Distributed Lock
+k6 run load-test/purchase-atomic.js        # Conditional SQL UPDATE
 
-# 3. So sánh 4 mode side-by-side
+# 3. So sánh 5 mode side-by-side
 k6 run load-test/comparison.js
 
 # Hoặc chạy toàn bộ test suite bằng script tự động:
@@ -111,21 +113,14 @@ bash load-test/run-all.sh
 
 ### Kết quả K6 Benchmark thực tế (20 Concurrent VUs):
 
-**Bằng chứng dữ liệu đo thực tế**: Chi tiết raw metrics được lưu tại thư mục [`load-test/results/`](load-test/results/)
+Raw metrics, số đơn commit và stock cuối được lưu trong
+[`atomic-lock-comparison`](load-test/results/atomic-lock-comparison/VERIFICATION.md).
+Thông số máy và lệnh tái chạy nằm trong
+[`ENVIRONMENT.md`](load-test/results/atomic-lock-comparison/ENVIRONMENT.md).
 
-```text
-═══════════════════════════════════════════════════════════════
-     FLASH SALE — K6 LOAD TEST COMPARISON RESULTS              
-     Config: 5 items, 20 concurrent users each
-═══════════════════════════════════════════════════════════════
-Mode            FinalStock   Oversell?    Notes
-─────────────────────────────────────────────────────────────
-NONE            0             YES       (oversell expected — bug demo)
-OPTIMISTIC      0             NO        (lock prevents oversell)
-PESSIMISTIC     0             NO        (lock prevents oversell)
-REDIS           0             NO        (lock prevents oversell)
-═══════════════════════════════════════════════════════════════
-```
+Workload chỉ có 5 đơn vị stock mỗi mode, nên phần lớn request đo phản hồi hết hàng.
+Stock không âm chưa đủ chứng minh không oversell; cần đối chiếu số đơn commit với stock ban đầu.
+NONE có thể không tái hiện oversell trong lượt k6 ramp-up này; các test simulation dùng người mua bắt đầu đồng thời để kiểm tra lost update.
 ### Multi-Instance Distributed Lock Verification:
 - Hướng dẫn chi tiết chạy 2 instance (Port 8080 & 8081) để chứng minh Redis Lock hoạt động xuyên JVM:  
 **[Multi-Instance Testing Guide](multi-instance.md)**
