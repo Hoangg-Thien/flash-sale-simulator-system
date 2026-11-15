@@ -1,6 +1,7 @@
 package com.hthien.flash_sale.exception;
 
 import java.time.Instant;
+import org.slf4j.MDC;
 
 import lombok.Builder;
 import lombok.Data;
@@ -13,6 +14,7 @@ public class ErrorResponse {
     private String error;
     private String message;
     private String path;
+    private String requestId;
 
     public static ErrorResponse of(int status, String error, String message, String path) {
         return ErrorResponse.builder()
@@ -21,6 +23,7 @@ public class ErrorResponse {
         .error(error)
         .message(message)
         .path(path)
+        .requestId(MDC.get("requestId"))
         .build();
     }
 }

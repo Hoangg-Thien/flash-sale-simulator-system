@@ -42,5 +42,10 @@ management:
         include: health,info,metrics
 
 app:
+  instance-id: ${INSTANCE_ID:local}
   lock:
     wait-time-seconds: 2
+
+logging:
+  pattern:
+    level: "%5p [instanceId=%X{instanceId:-${app.instance-id}}] [requestId=%X{requestId:-}]"

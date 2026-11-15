@@ -5,6 +5,8 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
+import org.slf4j.MDC;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -101,11 +103,15 @@ public class SimulationService {
         CountDownLatch doneLatch = new CountDownLatch(concurrentUsers); // xong
 
         ExecutorService executor = Executors.newFixedThreadPool(concurrentUsers);
+        Map<String, String> requestContext = MDC.getCopyOfContextMap();
 
         for(int i = 0; i < concurrentUsers; i++){
             final int threadIndex = i;
             executor.submit(() -> {
                 try {
+                    if (requestContext != null) {
+                        MDC.setContextMap(requestContext);
+                    }
                     startLatch.await();
 
                     SimulationRequest simRequest = executePurchase(run, product, threadIndex, lockMode);
@@ -116,6 +122,7 @@ public class SimulationService {
                 } catch (Throwable t) {
                     log.error("Thread {} unexpected failure: {}", threadIndex, t.getMessage(), t);
                 } finally {
+                    MDC.clear();
                     doneLatch.countDown();
                 }
             });
