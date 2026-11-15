@@ -17,6 +17,7 @@ on:
           - 'redis'
           - 'atomic'
           - 'comparison'
+          - 'multi-instance'
 
 jobs:
   k6-load-test:
@@ -32,10 +33,12 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Start Database, Redis and Application via Docker Compose
+        if: ${{ github.event.inputs.test_mode != 'multi-instance' }}
         run: |
           docker compose up -d --build
 
       - name: Wait for Application Healthcheck (Spring Boot UP)
+        if: ${{ github.event.inputs.test_mode != 'multi-instance' }}
         run: |
           echo "Waiting for http://localhost:8080/actuator/health to be UP..."
           timeout 120s bash -c 'until curl -sf http://localhost:8080/actuator/health | grep -q "\"status\":\"UP\""; do
@@ -58,6 +61,9 @@ jobs:
           chmod +x load-test/run-all.sh
           
           case "${{ github.event.inputs.test_mode }}" in
+            "multi-instance")
+              pwsh -NoProfile -File load-test/run-multi-instance.ps1
+              ;;
             "all")
               bash load-test/run-all.sh
               ;;
@@ -97,6 +103,6 @@ jobs:
           retention-days: 14
 
       - name: Teardown Docker Containers
-        if: always()
+        if: ${{ always() && github.event.inputs.test_mode != 'multi-instance' }}
         run: |
           docker compose down -v
