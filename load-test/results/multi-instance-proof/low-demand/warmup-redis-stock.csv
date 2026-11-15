@@ -1,0 +1,2 @@
+id,name,stock,orders,keys,units,node0_orders,node1_orders
+4,multi-REDIS-fd1dfe167fc54e7984a7343b7e22add9,8,2,2,2,1,1

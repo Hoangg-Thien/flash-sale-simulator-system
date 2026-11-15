@@ -1,0 +1,221 @@
+{
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "teardown": {
+                "name": "teardown",
+                "path": "::teardown",
+                "id": "a8a9942382e8ffe2e56ef29e664b8229",
+                "groups": {},
+                "checks": {
+                        "both instances read the same final stock": {
+                            "id": "b81e5dcbc49e79bfc36de507c8f5f18b",
+                            "passes": 1,
+                            "fails": 0,
+                            "name": "both instances read the same final stock",
+                            "path": "::teardown::both instances read the same final stock"
+                        },
+                        "final stock is nonnegative": {
+                            "path": "::teardown::final stock is nonnegative",
+                            "id": "3d794c1ce308f2d051a04bf45d90a575",
+                            "passes": 1,
+                            "fails": 0,
+                            "name": "final stock is nonnegative"
+                        },
+                        "safe stock does not exceed initial stock": {
+                            "name": "safe stock does not exceed initial stock",
+                            "path": "::teardown::safe stock does not exceed initial stock",
+                            "id": "a3a16caefc211992b1e2ce42f1af2947",
+                            "passes": 1,
+                            "fails": 0
+                        }
+                    }
+            }
+        },
+        "checks": {
+            "purchase status 201 or 409": {
+                "id": "fe033cb1ef2438d17c3f91a88a8ed387",
+                "passes": 20,
+                "fails": 0,
+                "name": "purchase status 201 or 409",
+                "path": "::purchase status 201 or 409"
+            },
+            "correct instance received purchase": {
+                "name": "correct instance received purchase",
+                "path": "::correct instance received purchase",
+                "id": "ded7f7eaf66eaa6a577dacd0811eabc4",
+                "passes": 20,
+                "fails": 0
+            },
+            "request ID propagated": {
+                "name": "request ID propagated",
+                "path": "::request ID propagated",
+                "id": "08245ce5916c7dd3c4e32076e72cd34b",
+                "passes": 20,
+                "fails": 0
+            },
+            "error body contains request ID": {
+                "id": "c81a0b11acd0903c5b8bae0ad3157414",
+                "passes": 20,
+                "fails": 0,
+                "name": "error body contains request ID",
+                "path": "::error body contains request ID"
+            }
+        }
+    },
+    "metrics": {
+        "iterations": {
+            "count": 20,
+            "rate": 157.37510908062248
+        },
+        "http_req_connecting": {
+            "max": 1.9574,
+            "p(95)": 1.0835999999999986,
+            "p(99)": 1.7720959999999986,
+            "avg": 0.5048079999999999,
+            "min": 0,
+            "med": 0.5384
+        },
+        "http_reqs": {
+            "count": 25,
+            "rate": 196.7188863507781
+        },
+        "http_req_tls_handshaking": {
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(95)": 0,
+            "p(99)": 0,
+            "avg": 0
+        },
+        "http_req_receiving": {
+            "med": 1.096,
+            "max": 6.6965,
+            "p(95)": 2.83174,
+            "p(99)": 5.775211999999993,
+            "avg": 1.4509679999999998,
+            "min": 0.426
+        },
+        "data_received": {
+            "count": 10932,
+            "rate": 86021.23462346825
+        },
+        "purchase_rejected": {
+            "count": 18,
+            "rate": 141.63759817256025
+        },
+        "http_req_duration": {
+            "avg": 46.310323999999994,
+            "min": 7.6446,
+            "med": 51.735,
+            "max": 68.0057,
+            "p(95)": 66.92743999999999,
+            "p(99)": 67.845164
+        },
+        "data_sent": {
+            "count": 6637,
+            "rate": 52224.92994840457
+        },
+        "purchase_confirmed": {
+            "count": 2,
+            "rate": 15.737510908062248
+        },
+        "http_req_duration{expected_response:true}": {
+            "p(95)": 66.92743999999999,
+            "p(99)": 67.845164,
+            "avg": 46.310323999999994,
+            "min": 7.6446,
+            "med": 51.735,
+            "max": 68.0057
+        },
+        "http_req_waiting": {
+            "avg": 44.717252,
+            "min": 6.5442,
+            "med": 50.4786,
+            "max": 67.4871,
+            "p(95)": 65.78286,
+            "p(99)": 67.204812
+        },
+        "iteration_duration": {
+            "min": 37.8199,
+            "med": 59.113699999999994,
+            "max": 68.6825,
+            "p(95)": 67.404085,
+            "p(99)": 68.426817,
+            "avg": 56.17441
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 25,
+            "thresholds": {
+                "rate==0": false
+            },
+            "value": 0
+        },
+        "purchase_attempts": {
+            "rate": 157.37510908062248,
+            "count": 20,
+            "thresholds": {
+                "count==20": false
+            }
+        },
+        "purchase_attempts{node:1}": {
+            "count": 10,
+            "rate": 78.68755454031124,
+            "thresholds": {
+                "count>0": false
+            }
+        },
+        "http_req_blocked": {
+            "med": 0.6768,
+            "max": 1.9574,
+            "p(95)": 1.3457,
+            "p(99)": 1.8105919999999989,
+            "avg": 0.6741679999999998,
+            "min": 0
+        },
+        "http_req_sending": {
+            "min": 0,
+            "med": 0,
+            "max": 0.6689,
+            "p(95)": 0.6411399999999996,
+            "p(99)": 0.6689,
+            "avg": 0.142104
+        },
+        "checks": {
+            "passes": 83,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "purchase_attempts{node:0}": {
+            "rate": 78.68755454031124,
+            "count": 10,
+            "thresholds": {
+                "count>0": false
+            }
+        }
+    },
+    "setup_data": {
+        "nodes": [
+            {
+                "instanceId": "app-a",
+                "url": "http://127.0.0.1:18080"
+            },
+            {
+                "instanceId": "app-b",
+                "url": "http://127.0.0.1:18081"
+            }
+        ],
+        "productId": 7,
+        "quantity": 1,
+        "runId": "5ba476c14f8045bcb6a64b2d3dbd01b7",
+        "users": 20,
+        "initialStock": 10,
+        "mode": "OPTIMISTIC"
+    }
+}
