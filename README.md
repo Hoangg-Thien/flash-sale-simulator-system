@@ -36,6 +36,7 @@ docker compose ps
 
 # 5. Mở Swagger UI
 http://localhost:8080/swagger-ui.html
+http://localhost:8081/swagger-ui.html
 ```
 
 ### Chạy Demo Simulation
@@ -121,9 +122,17 @@ Thông số máy và lệnh tái chạy nằm trong
 Workload chỉ có 5 đơn vị stock mỗi mode, nên phần lớn request đo phản hồi hết hàng.
 Stock không âm chưa đủ chứng minh không oversell; cần đối chiếu số đơn commit với stock ban đầu.
 NONE có thể không tái hiện oversell trong lượt k6 ramp-up này; các test simulation dùng người mua bắt đầu đồng thời để kiểm tra lost update.
-### Multi-Instance Distributed Lock Verification:
-- Hướng dẫn chi tiết chạy 2 instance (Port 8080 & 8081) để chứng minh Redis Lock hoạt động xuyên JVM:  
-**[Multi-Instance Testing Guide](multi-instance.md)**
+### Kiểm chứng tự động hai phiên ứng dụng
+
+Compose chạy `app-a` (8080) và `app-b` (8081) cùng dùng PostgreSQL/Redis.
+Mỗi phản hồi có `X-Request-Id` và `X-Instance-Id`; phản hồi lỗi có thêm `requestId`.
+
+```powershell
+powershell -NoProfile -File load-test/run-multi-instance.ps1
+```
+
+Runner dùng project và cổng kiểm chứng riêng (18080/18081), kiểm tra cả log nhận request lẫn số đơn/tổng số lượng đã lưu trong DB, rồi tự dọn tài nguyên riêng.
+Xem [hướng dẫn nhiều instance](multi-instance.md) để chạy lại, thêm bài trình diễn NONE hoặc xem các giới hạn.
 
 ## Dừng services
 

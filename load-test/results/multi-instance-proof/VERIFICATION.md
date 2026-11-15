@@ -1,6 +1,6 @@
 # Kiểm chứng tự động hai instance dùng chung PostgreSQL/Redis
 
-Phạm vi: Giai đoạn 2 của kế hoạch chuyển đổi phiên bản 2, nhánh `feature/hardening`, SHA bắt đầu `3c1dc15`. Không tách dịch vụ, không thêm Gateway/Kafka, không commit hoặc đẩy mã lên kho từ xa. Tag `monolith-v1` được để lại cho người dùng sau khi commit nội dung đã kiểm chứng; gắn tag lúc này sẽ trỏ nhầm vào commit Giai đoạn 1.
+Phạm vi: Giai đoạn 2 của kế hoạch chuyển đổi phiên bản 2, nhánh `feature/hardening`, SHA bắt đầu `3c1dc15`. Không tách dịch vụ hoặc thêm Gateway/Kafka. Báo cáo ghi lại trạng thái trước khi commit nội dung Giai đoạn 2; việc commit local về sau được thực hiện theo yêu cầu riêng của người dùng. Tag `monolith-v1` được để lại cho người dùng sau khi commit nội dung đã kiểm chứng; gắn tag trước khi commit sẽ trỏ nhầm vào commit Giai đoạn 1.
 
 ## Thay đổi chính
 
@@ -64,6 +64,6 @@ Chạy `-Rounds 1 -Users 2` vào thư mục [low-demand](low-demand/), không b�
 - [ENVIRONMENT.md](ENVIRONMENT.md) ghi cấu hình máy, phiên bản, hash JAR/image và lệnh tái chạy. `SHA256SUMS.txt` đi kèm dữ liệu gốc. Container, mạng và volume của cả hai lượt chạy đều đã được dọn.
 - Chưa chạy workflow GitHub từ xa, chưa kiểm chứng trên Linux/macOS hoặc với tải cao/kéo dài. Chưa kiểm tra mất mạng, dừng instance giữa giao dịch hay nhiều request đồng thời dùng cùng một Idempotency-Key; các request của bài đo có khóa riêng. Không suy diễn thành bảo đảm xử lý đúng mọi sự cố phân tán.
 - HTTP/API hiện có giữ nguyên; chỉ thêm header nhận diện và trường requestId cho ErrorResponse. Không có dữ liệu đặt hàng thật hoặc DB cục bộ bị reset. Không thay các kết quả đo Giai đoạn 0–1.
-- Công việc chưa commit/push theo yêu cầu. `monolith-v1` chưa được tạo; Giai đoạn 3 chưa bắt đầu.
+- Tại thời điểm thu thập bằng chứng, công việc chưa commit/push theo yêu cầu. Đợt commit local sau đó không thay đổi các số đo đã ghi; không tự đẩy mã lên kho từ xa. `monolith-v1` chưa được tạo; Giai đoạn 3 chưa bắt đầu.
 
 Nguồn thiết kế: [Spring OncePerRequestFilter](https://docs.spring.io/spring-framework/docs/6.2.x/javadoc-api/org/springframework/web/filter/OncePerRequestFilter.html), [Spring Boot logging](https://docs.spring.io/spring-boot/3.5/reference/features/logging.html), [Logback MDC theo thread](https://logback.qos.ch/manual/mdc.html). MDC được sao chép rõ ràng sang worker vì thread con không tự thừa hưởng context của thread gọi.

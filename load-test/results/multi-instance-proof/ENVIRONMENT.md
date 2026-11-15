@@ -1,6 +1,6 @@
 # Môi trường kiểm chứng monolith nhiều instance
 
-- Ngày đo: **2026-11-15**, múi giờ Asia/Bangkok. Nhánh `feature/hardening`, SHA bắt đầu `3c1dc15`; các thay đổi Giai đoạn 2 chưa commit hoặc đẩy lên kho từ xa.
+- Ngày đo: **2026-11-15**, múi giờ Asia/Bangkok. Nhánh `feature/hardening`, SHA bắt đầu `3c1dc15`; tại thời điểm đo, các thay đổi Giai đoạn 2 chưa commit hoặc đẩy lên kho từ xa.
 - Máy cá nhân: Windows 11 x64, AMD Ryzen 5 7535HS, 6 nhân / 12 CPU logic, RAM 15.32 GiB. Các ứng dụng và IDE khác vẫn chạy.
 - Docker Desktop Linux engine **29.6.2**, Compose **5.3.1**, 12 CPU logic và RAM khả dụng **7,968,632,832 byte**. Tệp ghi đè dùng `!reset`/`!override`, cần Compose >= 2.24.4.
 - Biên dịch/kiểm thử trên máy: Oracle JDK 21.0.2, Maven wrapper 3.9.16, Spring Boot 3.5.13. Image ứng dụng build bằng Dockerfile hiện tại, dùng Maven 3.9.9/Java 21 ở bước biên dịch và Temurin **21.0.13+9** ở bước chạy.
