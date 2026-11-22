@@ -9,7 +9,7 @@ Cần JDK 21 và Docker Desktop:
 ```powershell
 .\mvnw.cmd clean package
 # Hoặc chạy riêng nhóm nhiều JVM và requestId/MDC:
-.\mvnw.cmd '-Dtest=MultiInstanceIntegrationTest,RequestCorrelationIntegrationTest' test
+.\mvnw.cmd -pl services/order-service '-Dtest=MultiInstanceIntegrationTest,RequestCorrelationIntegrationTest' test
 ```
 
 Kiểm thử khởi động hai JVM với hai cổng ngẫu nhiên, dùng chung PostgreSQL/Redis qua Testcontainers. Mỗi đợt có 20 người mua bắt đầu đồng thời, chia 10 yêu cầu cho mỗi JVM. Kết quả được đối chiếu với số đơn, khóa idempotency, tổng số lượng mua và tồn kho trong DB; cả hai API phải trả cùng tồn kho đã lưu. NONE là trường hợp riêng, dùng sản phẩm riêng để tái hiện mất cập nhật.

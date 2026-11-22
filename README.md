@@ -11,6 +11,8 @@ Demo platform để minh họa Race Condition và các Locking Strategies trong 
 | **Flyway** — database migration & version control
 | **Testcontainers** — integration tests với real containers
 
+Inventory Service chạy độc lập trên PostgreSQL riêng. Xem [Dịch vụ tồn kho](docs/INVENTORY_SERVICE.md) để chạy Docker Compose, kiểm thử và xem hợp đồng API nội bộ.
+
 ## Quick Start
 
 ### Prerequisites
@@ -75,10 +77,10 @@ curl -X POST http://localhost:8080/api/v1/simulations \
 
 ```bash
 # Unit tests (không cần Docker)
-mvn test -Dtest=LockStrategyTest
+mvn -pl services/order-service test -Dtest=LockStrategyUnitTest
 
 # Integration tests (cần Docker Desktop)
-mvn test -Dtest=SimulationServiceTest,SimulationComparisonTest,ConcurrencyIntegrationTest,OrderServiceTest
+mvn -pl services/order-service test -Dtest=SimulationServiceIntegrationTest,SimulationComparisonIntegrationTest,ConcurrencyIntegrationTest,OrderServiceIntegrationTest
 
 # Tất cả tests
 mvn test

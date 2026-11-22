@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: inventory-service
+  datasource:
+    url: ${INVENTORY_DB_URL:jdbc:postgresql://localhost:5432/inventory_db}
+    username: ${INVENTORY_DB_USER:inventory}
+    password: ${INVENTORY_DB_PASSWORD:inventory}
+  jackson:
+    deserialization:
+      accept-float-as-int: false
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  port: 8081
+
+inventory:
+  lock-mode: ATOMIC
+  unsafe-modes-enabled: false

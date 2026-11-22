@@ -1,0 +1,55 @@
+x-inventory: &inventory
+  image: flash-sale-inventory:local
+  build:
+    context: .
+    args:
+      SERVICE: inventory-service
+  environment:
+    INVENTORY_DB_URL: jdbc:postgresql://inventory-postgres:5432/inventory_db
+    INVENTORY_DB_USER: ${INVENTORY_DB_USER:-inventory}
+    INVENTORY_DB_PASSWORD: ${INVENTORY_DB_PASSWORD:-inventory}
+    INVENTORY_LOCK_MODE: ${INVENTORY_LOCK_MODE:-ATOMIC}
+    INVENTORY_UNSAFE_MODES_ENABLED: "false"
+    INVENTORY_REDIS_ADDRESS: redis://redis:6379
+  depends_on:
+    inventory-postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/actuator/health"]
+    interval: 5s
+    timeout: 3s
+    retries: 15
+
+services:
+  inventory-postgres:
+    image: postgres:17.9
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: ${INVENTORY_DB_USER:-inventory}
+      POSTGRES_PASSWORD: ${INVENTORY_DB_PASSWORD:-inventory}
+    volumes:
+      - inventory_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d inventory_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  inventory-a:
+    <<: *inventory
+
+  inventory-b:
+    <<: *inventory
+
+volumes:
+  inventory_data:

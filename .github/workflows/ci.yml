@@ -35,5 +35,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: surefire-reports
-          path: target/surefire-reports/
+          path: |
+            services/*/target/surefire-reports/
+            services/inventory-service/target/inventory-integration/
           retention-days: 7
