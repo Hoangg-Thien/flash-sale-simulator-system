@@ -20,6 +20,5 @@ public class CreateSimulationRequest {
     @Max(value = 200, message = "Concurrent users must be <= 200")
     private Integer concurrentUsers;
 
-    @NotNull(message = "Lock mode is required")
     private String lockMode;
 }

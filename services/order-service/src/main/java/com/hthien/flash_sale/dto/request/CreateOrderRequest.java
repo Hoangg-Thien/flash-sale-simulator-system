@@ -16,6 +16,5 @@ public class CreateOrderRequest {
     @Max(value = 100, message = "Quantity must be <= 100")
     private Integer quantity;
 
-    @NotNull(message = "Lock mode is required")
     private String lockMode;
 }

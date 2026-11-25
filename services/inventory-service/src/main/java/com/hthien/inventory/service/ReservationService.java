@@ -70,6 +70,15 @@ public class ReservationService {
             () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found"));
     }
 
+    public Inventory initialize(long productId, int stock) {
+        return transaction.execute(tx -> {
+            if (!inventory.initialize(productId, stock) && !inventory.matchesInitialStock(productId, stock)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Different or unmanaged initial stock");
+            }
+            return getInventory(productId);
+        });
+    }
+
     public Inventory setStock(long productId, int stock) {
         return strategy.around(productId, () -> transaction.execute(tx -> {
             if (!inventory.createIfAbsent(productId, stock)) {

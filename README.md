@@ -1,144 +1,24 @@
-# Flash Sale Emulator System — Concurrency Demo
+# Hệ thống đặt hàng flash sale
 
-Demo platform để minh họa Race Condition và các Locking Strategies trong hệ thống e-commerce flash sale.
+Order Service quản lý danh mục, đơn hàng và giá mua. Inventory Service quản lý số lượng khả dụng và các lượt giữ hàng. Hai ứng dụng Java 21 dùng Spring Boot, Flyway và hai cơ sở dữ liệu PostgreSQL riêng. Hai bản sao Inventory dùng chung kho và chạy ở chế độ ATOMIC mặc định.
 
-## Tech Stack
-| Technologies |
-|---|
-| **Java 21** + **Spring Boot 3.5**
-| **PostgreSQL 17.9** — persistent storage, pessimistic locking (`SELECT ... FOR UPDATE`)
-| **Redis 7** + **Redisson** — distributed locking
-| **Flyway** — database migration & version control
-| **Testcontainers** — integration tests với real containers
+## Chạy và kiểm chứng
 
-Inventory Service chạy độc lập trên PostgreSQL riêng. Xem [Dịch vụ tồn kho](docs/INVENTORY_SERVICE.md) để chạy Docker Compose, kiểm thử và xem hợp đồng API nội bộ.
-
-## Quick Start
-
-### Prerequisites
-- Docker Desktop
-- (Optional) JDK 21 + Maven 3.9 để chạy tests
-
-### Chạy bằng Docker Compose
+Chạy từ thư mục gốc với Docker BuildKit, Docker Compose từ 2.20.3 và Python 3. Dùng project riêng cho kiểm thử phục hồi vì chương trình sẽ dừng cả hai bản sao Inventory và khởi động lại Order.
 
 ```bash
-# 1. Clone repo
-git clone <repo-url>
-cd flash-sale-platform
-
-# 2. Copy env file
-cp .env.example .env
-# (Optional) sửa password trong .env
-
-# 3. Khởi động tất cả services
-docker compose up -d
-
-# 4. Kiểm tra health
-docker compose ps
-
-# 5. Mở Swagger UI
-http://localhost:8080/swagger-ui.html
-http://localhost:8081/swagger-ui.html
+mvn clean verify
+export COMPOSE_PROJECT_NAME=flash-sale-dist
+docker compose up --build -d --wait
+python3 scripts/smoke-orders.py --recovery
+docker compose down
 ```
 
-### Chạy Demo Simulation
+Order mở cổng 8080 trên máy cục bộ. Có thể đặt `ORDER_PORT` trước khi khởi động. Script gửi yêu cầu mua, gửi lại khóa, thử mua khi thiếu hàng và đối chiếu trạng thái đã lưu trong cả hai cơ sở dữ liệu. Tùy chọn `--recovery` kiểm tra thêm đơn đang chờ qua một lần gián đoạn dịch vụ. Để chạy mô phỏng, bật `ORDER_PROFILES=docker,lab`.
 
-```bash
-# Bước 1: Tạo product
-curl -X POST http://localhost:8080/api/v1/products \
-  -H "Content-Type: application/json" \
-  -d '{"name": "iPhone Flash Sale", "price": 15000000, "initialStock": 1}'
+## API và vận hành
 
-# Bước 2: Chạy simulation NONE (tái hiện oversell bug)
-curl -X POST http://localhost:8080/api/v1/simulations \
-  -H "Content-Type: application/json" \
-  -d '{"productId": 1, "initialStock": 1, "concurrentUsers": 20, "lockMode": "NONE"}'
-
-# Bước 3: Chạy simulation PESSIMISTIC (ngăn oversell)
-curl -X POST http://localhost:8080/api/v1/simulations \
-  -H "Content-Type: application/json" \
-  -d '{"productId": 1, "initialStock": 1, "concurrentUsers": 20, "lockMode": "PESSIMISTIC"}'
-
-# Bước 4: So sánh kết quả
-# oversellingDetected: true (NONE) vs false (PESSIMISTIC/OPTIMISTIC/REDIS/ATOMIC)
-```
-
-## Kiến trúc Locking Strategies
-
-| Strategy | Cơ chế | Thread-safe multi-instance | Best for |
-|---|---|---|---|
-| `NONE` | Không lock | No | Reproduce bug |
-| `OPTIMISTIC` | `@Version` (Hibernate) |  DB | Low contention |
-| `PESSIMISTIC` | `SELECT FOR UPDATE` |  DB | High contention |
-| `REDIS` | Redisson Distributed Lock |  Redis | Multi-instance |
-| `ATOMIC` | Conditional SQL UPDATE, tăng version | DB | Trừ kho có điều kiện trong transaction |
-
-## Chạy Tests
-
-```bash
-# Unit tests (không cần Docker)
-mvn -pl services/order-service test -Dtest=LockStrategyUnitTest
-
-# Integration tests (cần Docker Desktop)
-mvn -pl services/order-service test -Dtest=SimulationServiceIntegrationTest,SimulationComparisonIntegrationTest,ConcurrencyIntegrationTest,OrderServiceIntegrationTest
-
-# Tất cả tests
-mvn test
-```
-
-## Load Testing với K6
-
-Hệ thống cung cấp trọn bộ k6 load test scripts đo throughput, latency và tính toàn vẹn dữ liệu từ bên ngoài qua HTTP.
-
-### Chạy Load Tests
-
-```bash
-# 1. Smoke test (kiểm tra nhanh trước khi tải cao)
-k6 run load-test/smoke-test.js
-
-# 2. Test từng chiến lược khóa
-k6 run load-test/purchase-none.js          # Tái hiện Race condition (NONE)
-k6 run load-test/purchase-optimistic.js    # Optimistic locking (@Version)
-k6 run load-test/purchase-pessimistic.js   # Pessimistic locking (SELECT FOR UPDATE)
-k6 run load-test/purchase-redis.js         # Redisson Distributed Lock
-k6 run load-test/purchase-atomic.js        # Conditional SQL UPDATE
-
-# 3. So sánh 5 mode side-by-side
-k6 run load-test/comparison.js
-
-# Hoặc chạy toàn bộ test suite bằng script tự động:
-# Linux / macOS:
-bash load-test/run-all.sh
-
-# Windows (PowerShell):
-.\load-test\run-all.ps1
-```
-
-### Kết quả K6 Benchmark thực tế (20 Concurrent VUs):
-
-Raw metrics, số đơn commit và stock cuối được lưu trong
-[`atomic-lock-comparison`](load-test/results/atomic-lock-comparison/VERIFICATION.md).
-Thông số máy và lệnh tái chạy nằm trong
-[`ENVIRONMENT.md`](load-test/results/atomic-lock-comparison/ENVIRONMENT.md).
-
-Workload chỉ có 5 đơn vị stock mỗi mode, nên phần lớn request đo phản hồi hết hàng.
-Stock không âm chưa đủ chứng minh không oversell; cần đối chiếu số đơn commit với stock ban đầu.
-NONE có thể không tái hiện oversell trong lượt k6 ramp-up này; các test simulation dùng người mua bắt đầu đồng thời để kiểm tra lost update.
-### Kiểm chứng tự động hai phiên ứng dụng
-
-Compose chạy `app-a` (8080) và `app-b` (8081) cùng dùng PostgreSQL/Redis.
-Mỗi phản hồi có `X-Request-Id` và `X-Instance-Id`; phản hồi lỗi có thêm `requestId`.
-
-```powershell
-powershell -NoProfile -File load-test/run-multi-instance.ps1
-```
-
-Runner dùng project và cổng kiểm chứng riêng (18080/18081), kiểm tra cả log nhận request lẫn số đơn/tổng số lượng đã lưu trong DB, rồi tự dọn tài nguyên riêng.
-Xem [hướng dẫn nhiều instance](multi-instance.md) để chạy lại, thêm bài trình diễn NONE hoặc xem các giới hạn.
-
-## Dừng services
-
-```bash
-docker compose down           # dừng container, giữ data
-docker compose down -v        # dừng container, xóa volumes (reset sạch)
-```
+- `POST /api/v1/orders` nhận `productId`, `quantity` và header `Idempotency-Key`. Phản hồi gồm `201` khi tạo đơn đã xác nhận, `200` khi đọc lại đơn đã xác nhận, `202` khi đang chờ và `409` khi từ chối hoặc xung đột dữ liệu. `GET /api/v1/orders/{id}` trả trạng thái mới nhất. [Vòng đời đơn hàng](docs/VONG_DOI_DON_HANG.md)
+- Khởi tạo và chuyển dữ liệu tồn kho cần được xác nhận trước khi mở bán sản phẩm. [Chuyển dữ liệu tồn kho](docs/CHUYEN_DU_LIEU_TON_KHO.md)
+- Các API giữ hàng, hoàn kho và đọc số lượng dùng tiền tố nội bộ `/internal/v1`. [Dịch vụ tồn kho](docs/INVENTORY_SERVICE.md)
+- Để tái hiện các phép đo ứng dụng đơn khối, dùng mã nguồn tại thẻ `monolith-v1`. [Kết quả kiểm thử đồng thời](load-test/results/multi-instance-proof/)

@@ -56,6 +56,18 @@ public class InventoryRepository {
         }
     }
 
+    public boolean initialize(long productId, int stock) {
+        return jdbc.sql("""
+            INSERT INTO inventory (product_id, stock, initial_stock) VALUES (?, ?, ?)
+            ON CONFLICT (product_id) DO NOTHING
+            """).params(productId, stock, stock).update() == 1;
+    }
+
+    public boolean matchesInitialStock(long productId, int stock) {
+        return jdbc.sql("SELECT EXISTS (SELECT 1 FROM inventory WHERE product_id = ? AND initial_stock = ?)")
+            .params(productId, stock).query(Boolean.class).single();
+    }
+
     public boolean createIfAbsent(long productId, int stock) {
         return jdbc.sql("INSERT INTO inventory (product_id, stock) VALUES (?, ?) ON CONFLICT (product_id) DO NOTHING")
             .params(productId, stock).update() == 1;

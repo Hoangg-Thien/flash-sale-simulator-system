@@ -5,63 +5,71 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Map;
-import org.slf4j.MDC;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import com.hthien.flash_sale.client.StockClient;
 import com.hthien.flash_sale.dto.request.CreateOrderRequest;
 import com.hthien.flash_sale.dto.request.CreateSimulationRequest;
+import com.hthien.flash_sale.dto.request.ResetStockRequest;
 import com.hthien.flash_sale.dto.response.SimulationRequestResponse;
 import com.hthien.flash_sale.dto.response.SimulationRunResponse;
-import com.hthien.flash_sale.entity.Inventory;
 import com.hthien.flash_sale.entity.Order;
 import com.hthien.flash_sale.entity.Product;
 import com.hthien.flash_sale.entity.SimulationRequest;
 import com.hthien.flash_sale.entity.SimulationRun;
 import com.hthien.flash_sale.enums.LockMode;
-import com.hthien.flash_sale.enums.OrderStatus;
-import com.hthien.flash_sale.exception.InsufficientStockException;
+import com.hthien.flash_sale.enums.SimulationOutcome;
 import com.hthien.flash_sale.exception.ProductNotFoundException;
 import com.hthien.flash_sale.exception.SimulationNotFoundException;
-import com.hthien.flash_sale.repository.InventoryRepository;
 import com.hthien.flash_sale.repository.OrderRepository;
 import com.hthien.flash_sale.repository.ProductRepository;
 import com.hthien.flash_sale.repository.SimulationRequestRepository;
 import com.hthien.flash_sale.repository.SimulationRunRepository;
-
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Profile("lab")
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class SimulationService {
     
     private final ProductRepository productRepository;
-    private final InventoryRepository inventoryRepository;
+    private final StockClient inventory;
+    private final ProductService productService;
     private final OrderRepository orderRepository;
     private final SimulationRequestRepository simulationRequestRepository;
     private final SimulationRunRepository simulationRunRepository;
     private final OrderService orderService;
-    private final EntityManager entityManager;
+    @Value("${inventory.lock-mode:ATOMIC}")
+    private LockMode configuredMode;
 
     public SimulationRunResponse runSimulation(CreateSimulationRequest request){
         // validate product và lockmode 
         Product product = productRepository.findById(request.getProductId())
         .orElseThrow(() -> new ProductNotFoundException(request.getProductId()));
 
-        LockMode lockMode = parseLockMode(request.getLockMode());
+        LockMode lockMode = request.getLockMode() == null ? configuredMode
+            : LockMode.valueOf(request.getLockMode().toUpperCase(Locale.ROOT));
+        if (lockMode != configuredMode) {
+            throw new IllegalArgumentException("Set the simulation mode to the deployed Inventory lock mode: " + configuredMode);
+        }
 
         // reset stock về initialStock
-        resetStock(request.getProductId(), request.getInitialStock());
+        ResetStockRequest reset = new ResetStockRequest();
+        reset.setNewStock(request.getInitialStock());
+        productService.resetStock(request.getProductId(), reset);
         log.info("Simulation starting: productId={}, initialStock={}, concurrentUsers={}, lockMode={}",
         product.getId(), request.getInitialStock(), request.getConcurrentUsers(), lockMode);
 
@@ -132,33 +140,31 @@ public class SimulationService {
         startLatch.countDown();
 
         try {
-            boolean completed = doneLatch.await(60, TimeUnit.SECONDS); // timeout 60s
-            if(!completed){
-                log.error("Simulation timeout: not all threads completed within 60s");
-            }
+            doneLatch.await();
         } catch (InterruptedException e){
             Thread.currentThread().interrupt();
-            log.error("Main thread interrupted while waiting for simulation");
+            throw new IllegalStateException("Simulation interrupted", e);
         } finally {
             executor.shutdown();
+        }
+        if (results.size() != concurrentUsers) {
+            throw new IllegalStateException("A simulation worker failed before recording its result");
         }
         return results;
     }
 
-    @Transactional
-    protected SimulationRun completeSimulationRun(SimulationRun run, List<SimulationRequest> simRequests, Long productId){
+    private SimulationRun completeSimulationRun(SimulationRun run, List<SimulationRequest> simRequests, Long productId){
         Instant finishedAt = Instant.now();
 
         long successCount = simRequests.stream()
-        .filter(r -> r.getStatus() == OrderStatus.SUCCESS)
+        .filter(r -> r.getStatus() == SimulationOutcome.CONFIRMED)
         .count();
 
-        long failedCount = simRequests.size() - successCount;
+        long failedCount = simRequests.stream()
+            .filter(r -> r.getStatus() == SimulationOutcome.REJECTED || r.getStatus() == SimulationOutcome.ERROR)
+            .count();
         
-        entityManager.clear(); // Xóa L1 cache để đọc giá trị mới nhất từ DB
-        int finalStock = inventoryRepository.findByProductId(productId)
-        .map(inv -> inv.getStock())
-        .orElse(-1);
+        int finalStock = inventory.get(productId).stock();
 
         // phát hiện oversell
         boolean oversellingDetected = finalStock < 0 || successCount > run.getInitialStock();
@@ -210,7 +216,7 @@ public class SimulationService {
     private SimulationRequest executePurchase(SimulationRun run, Product product, int threadIndex, LockMode lockMode){
         long startTime = System.currentTimeMillis();
         Order successOrder = null;
-        OrderStatus status = OrderStatus.FAILED;
+        SimulationOutcome status = SimulationOutcome.ERROR;
         String errorMessage = null;
         int httpStatus = 409;
 
@@ -220,18 +226,18 @@ public class SimulationService {
             orderRequest.setQuantity(1);
             orderRequest.setLockMode(lockMode.name());
 
-            var orderResponse = orderService.createOrder(orderRequest, null);
+            var orderResponse = orderService.createOrder(orderRequest, UUID.randomUUID().toString());
 
-            status = OrderStatus.SUCCESS;
-            httpStatus = 201;
+            status = SimulationOutcome.valueOf(orderResponse.getOrderStatus().name());
+            httpStatus = switch (orderResponse.getOrderStatus()) {
+                case PENDING -> 202;
+                case CONFIRMED -> 201;
+                case REJECTED -> 409;
+            };
 
             successOrder = orderRepository.getReferenceById(orderResponse.getId());
-        } catch (InsufficientStockException e) {
-            status = OrderStatus.FAILED;
-            errorMessage = "Insufficient stock";
-            httpStatus = 409;
         } catch(Exception e){
-            status = OrderStatus.FAILED;
+            status = SimulationOutcome.ERROR;
             errorMessage = e.getMessage() != null ? e.getMessage().substring(0, Math.min(e.getMessage().length(),255))
             : "Unknown Error";
             httpStatus = 500;
@@ -253,8 +259,7 @@ public class SimulationService {
         return simulationRequestRepository.save(simRequest);
     }
 
-    @Transactional
-    protected SimulationRun createSimulationRun(Product product, CreateSimulationRequest request, LockMode lockMode){
+    private SimulationRun createSimulationRun(Product product, CreateSimulationRequest request, LockMode lockMode){
         SimulationRun run = SimulationRun.builder()
         .product(product)
         .initialStock(request.getInitialStock())
@@ -263,17 +268,6 @@ public class SimulationService {
         .startedAt(Instant.now())
         .build();
         return simulationRunRepository.save(run);
-    }
-
-    // tạo SimulationRun record ban đầu
-    @Transactional
-    protected void resetStock(Long productId, Integer newStock){
-        Inventory inventory = inventoryRepository.findByProductId(productId)
-        .orElseThrow(() -> new ProductNotFoundException(productId));
-
-        inventory.setStock(newStock);
-        inventoryRepository.save(inventory);
-        log.info("Stock reset to {} for productId={}", newStock, productId);
     }
 
     @Transactional(readOnly = true)
@@ -300,13 +294,4 @@ public class SimulationService {
         .toList();
     }
 
-    private LockMode parseLockMode(String lockModeStr){
-        try {
-            return LockMode.valueOf(lockModeStr.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(
-            "Invalid lockMode: " + lockModeStr +
-            ". Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS, ATOMIC");
-        }
-    }
 }

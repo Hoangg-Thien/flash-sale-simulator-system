@@ -44,6 +44,11 @@ class InventoryController {
         return service.getInventory(productId);
     }
 
+    @PostMapping("/inventory/{productId}/initialize")
+    Inventory initialize(@PathVariable @Positive long productId, @RequestBody @Valid StockRequest request) {
+        return service.initialize(productId, request.stock());
+    }
+
     @PutMapping("/inventory/{productId}")
     Inventory setStock(@PathVariable @Positive long productId, @RequestBody @Valid StockRequest request) {
         return service.setStock(productId, request.stock());

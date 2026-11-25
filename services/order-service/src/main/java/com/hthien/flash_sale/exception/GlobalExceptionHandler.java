@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.hthien.flash_sale.dto.response.OrderResponse;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 
-import jakarta.persistence.OptimisticLockException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,26 +33,6 @@ public class GlobalExceptionHandler {
         return ErrorResponse.of(400, "VALIDATION_FAILED", message, request.getRequestURI());
     }
 
-    // Hết hàng → 409 Conflict
-    @ExceptionHandler(InsufficientStockException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleInsufficientStock(InsufficientStockException ex, HttpServletRequest request) {
-        return ErrorResponse.of(409, "INSUFFICIENT_STOCK", ex.getMessage(), request.getRequestURI());
-    }
-
-    /* 
-    Idempotency duplicate: trả lại response cũ với HTTP 200
-    Tại sao 200 thay vì 409?
-    RFC 9110 / Stripe spec: idempotent duplicate = "đã xử lý thành công",
-    trả lại kết quả cũ. 409 chỉ dùng khi có conflict thật sự về state.
-    */
-    @ExceptionHandler(DuplicateOrderException.class)
-    @ResponseStatus(HttpStatus.OK)
-    public OrderResponse handleDuplicateOrder(DuplicateOrderException ex) {
-        return OrderResponse.from(ex.getExistingOrder());
-    }
-
-    // lockMode không hợp lệ → 400 Bad Request
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
@@ -65,19 +45,12 @@ public class GlobalExceptionHandler {
         return ErrorResponse.of(404, "SIMULATION_NOT_FOUND", ex.getMessage(), request.getRequestURI());
     }
 
-    // 409 = conflict về state (sản phẩm đang được xử lý — là business conflict)
-    @ExceptionHandler(LockAcquisitionException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleLockAcquisition(LockAcquisitionException ex, HttpServletRequest request){
-        return ErrorResponse.of(409, "LOCK_ACQUISITION_FAILED", ex.getMessage(), request.getRequestURI());
-    }
-
-    // Optimistic lock conflict → 409
-    @ExceptionHandler(OptimisticLockException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleOptimisticLock(OptimisticLockException ex, HttpServletRequest request){
-        return ErrorResponse.of(409, "OPTIMISTIC_LOCK_CONFLICT",
-        "Resource was modified by another request. Please retry.", request.getRequestURI());
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleStatus(
+            ResponseStatusException ex, HttpServletRequest request) {
+        int status = ex.getStatusCode().value();
+        return ResponseEntity.status(status).body(
+            ErrorResponse.of(status, ex.getStatusCode().toString(), ex.getReason(), request.getRequestURI()));
     }
 
     @ExceptionHandler(Exception.class)

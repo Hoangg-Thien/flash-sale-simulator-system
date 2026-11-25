@@ -3,9 +3,8 @@ package com.hthien.flash_sale.dto.response;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import com.hthien.flash_sale.entity.Inventory;
+import com.hthien.flash_sale.client.StockClient.Stock;
 import com.hthien.flash_sale.entity.Product;
-
 import lombok.Builder;
 import lombok.Data;
 
@@ -20,13 +19,13 @@ public class ProductResponse {
     private Instant createdAt;
     private Instant updatedAt;
 
-    public static ProductResponse from(Product product, Inventory inventory){
+    public static ProductResponse from(Product product, Stock inventory){
         return ProductResponse.builder()
         .id(product.getId())
         .name(product.getName())
         .price(product.getPrice())
-        .stock(inventory.getStock())
-        .inventoryVersion(inventory.getVersion())
+        .stock(inventory == null ? null : inventory.stock())
+        .inventoryVersion(inventory == null ? null : inventory.version())
         .createdAt(product.getCreatedAt())
         .updatedAt(product.getUpdatedAt())
         .build();

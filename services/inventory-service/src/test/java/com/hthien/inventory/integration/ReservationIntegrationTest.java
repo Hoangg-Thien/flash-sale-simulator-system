@@ -104,6 +104,19 @@ class ReservationIntegrationTest {
     }
 
     @Test
+    void initializationReplayAfterPurchaseCannotRestoreConsumedStock() throws Exception {
+        String path = INVENTORY + "11/initialize";
+        assertThat(send(URLS.get(0), "POST", path, "{\"stock\":10}").statusCode()).isEqualTo(200);
+        assertStatus(reserve(0, 1, 11, 3), "RESERVED");
+        assertThat(send(URLS.get(1), "POST", path, "{\"stock\":10}").statusCode()).isEqualTo(200);
+        assertThat(send(URLS.get(1), "POST", path, "{\"stock\":20}").statusCode()).isEqualTo(409);
+        assertThat(stock(11)).isEqualTo(7);
+        seed(12, 10);
+        assertThat(send(URLS.get(0), "POST", INVENTORY + "12/initialize", "{\"stock\":10}").statusCode())
+            .isEqualTo(409);
+    }
+
+    @Test
     void duplicateReserveAndReleaseAcrossTwoJvmsMutateStockOnce() throws Exception {
         seed(11, 10);
         var reserves = race(IntStream.range(0, 24)

@@ -1,16 +1,17 @@
 # Dịch vụ tồn kho
 
-`services/inventory-service` chạy độc lập bằng Java 21 và Spring Boot. Dịch vụ quản lý cơ sở dữ liệu PostgreSQL `inventory_db`, gồm tồn kho khả dụng, trạng thái giữ hàng và lịch sử di trú Flyway riêng. Bên gọi cung cấp mã đơn hàng và mã sản phẩm. Ứng dụng trong `services/order-service` quản lý đơn hàng, dòng hàng và danh mục sản phẩm. Luồng đặt hàng và mô phỏng hiện vẫn dùng tồn kho trong cơ sở dữ liệu của ứng dụng này. Dịch vụ tồn kho khởi động với dữ liệu trống. Thẻ Git `monolith-v1` là mốc đối chiếu cho các phép đo.
+`services/inventory-service` chạy độc lập bằng Java 21 và Spring Boot. Dịch vụ quản lý cơ sở dữ liệu PostgreSQL `inventory_db`, gồm tồn kho khả dụng, trạng thái giữ hàng và lịch sử di trú Flyway riêng. Bên gọi cung cấp mã đơn hàng và mã sản phẩm. Ứng dụng trong `services/order-service` quản lý đơn hàng, dòng hàng và danh mục sản phẩm. Luồng đặt hàng gọi API giữ hàng qua HTTP. Dịch vụ tồn kho khởi động với dữ liệu trống. Thẻ Git `monolith-v1` là mốc đối chiếu cho các phép đo.
 
 ## API nội bộ
 
-Các đường dẫn đều bắt đầu bằng `/internal/v1`. Docker Compose chỉ cho truy cập dịch vụ tồn kho, PostgreSQL và Redis qua mạng Docker nội bộ. Thao tác đặt lại tồn kho dành cho quản trị và mô phỏng.
+Các đường dẫn đều bắt đầu bằng `/internal/v1`. Docker Compose dùng mạng dịch vụ cho REST nội bộ giữa Order và Inventory, cùng các mạng DB riêng cho PostgreSQL và Redis. Các cổng Inventory, PostgreSQL và Redis không được công khai trên máy chủ. Thao tác đặt lại tồn kho dành cho quản trị và mô phỏng.
 
 | Phương thức và đường dẫn | Dữ liệu gửi | Kết quả |
 | --- | --- | --- |
 | `POST /internal/v1/reservations` | `{"orderId":1001,"productId":42,"quantity":3}` | `200` kèm trạng thái hiện tại. Ở lần đầu nhận mã đơn hàng, dịch vụ ghi nhận kết quả giữ hàng hoặc từ chối. |
 | `GET /internal/v1/reservations/{orderId}` | | `200` kèm trạng thái hiện tại hoặc `404` nếu chưa có bản ghi cho mã đơn hàng. |
 | `POST /internal/v1/reservations/{orderId}/release` | `{"productId":42,"quantity":3}` | `200` kèm trạng thái sau khi hoàn kho hoặc hủy giữ hàng. Dịch vụ tạo bản ghi hủy nếu chưa có mã đơn hàng và giữ nguyên trạng thái của đơn đã bị từ chối. |
+| `POST /internal/v1/inventory/{productId}/initialize` | `{"stock":10}` | `200` kèm tồn hiện tại. Tạo tồn kho một lần. Gọi lại với cùng số lượng khởi tạo vẫn giữ nguyên số tồn khả dụng sau mua hàng. Trả `409` khi số lượng khởi tạo khác hoặc dòng kho cũ chưa có thông tin khởi tạo. |
 | `GET /internal/v1/inventory/{productId}` | | `200` kèm `{productId,stock,version}` hoặc `404` nếu chưa có bản ghi tồn kho. |
 | `PUT /internal/v1/inventory/{productId}` | `{"stock":10}` | `200` kèm `{productId,stock,version}`. Tạo mới hoặc đặt lại số lượng khả dụng. Các lượt giữ hàng hiện tại vẫn giữ trạng thái và số lượng có thể hoàn. |
 
@@ -64,7 +65,7 @@ docker compose -p inventory-local -f docker-compose.inventory.yml up --build -d 
 docker compose -p inventory-local -f docker-compose.inventory.yml ps
 ```
 
-Hai phiên bản dịch vụ dùng chung `inventory_db` và có thể dùng chung Redis. Tệp `docker-compose.yml` ở thư mục gốc vẫn chạy ứng dụng đơn khối để mô phỏng. Để chạy dịch vụ tồn kho ở chế độ `REDIS`, đặt `INVENTORY_LOCK_MODE=REDIS` trước lệnh Compose.
+Hai phiên bản dịch vụ dùng chung `inventory_db` và có thể dùng chung Redis. Tệp `docker-compose.yml` ở thư mục gốc chạy cả dịch vụ đặt hàng và dịch vụ tồn kho. Để chạy dịch vụ tồn kho ở chế độ `REDIS`, đặt `INVENTORY_LOCK_MODE=REDIS` trước lệnh Compose.
 
 Tệp JAR chạy độc lập nằm ở `services/inventory-service/target/inventory-service-0.0.1-SNAPSHOT.jar`. Khi chạy trực tiếp, cấu hình `INVENTORY_DB_URL`, `INVENTORY_DB_USER` và `INVENTORY_DB_PASSWORD` để kết nối PostgreSQL. Chế độ `REDIS` cũng hỗ trợ cấu hình `INVENTORY_REDIS_ADDRESS`.
 
@@ -92,4 +93,4 @@ docker compose -p inventory-local -f docker-compose.inventory.yml down
 
 ## Giới hạn vận hành
 
-Dịch vụ giữ bản ghi giữ hàng và bản ghi hủy vô thời hạn để xử lý yêu cầu gửi lại. Việc chuyển dữ liệu tồn kho, gọi từ ứng dụng đặt hàng và đối soát những đơn chưa có kết quả thuộc phần tích hợp với ứng dụng đặt hàng. Đặt lại tồn kho dành cho mô phỏng vì thao tác này thay đổi số lượng khả dụng độc lập với giao dịch mua hàng. Bộ kiểm thử tích hợp đã kiểm tra tranh chấp đồng thời và hoàn tác giao dịch. Các trường hợp tiến trình dừng ngay sau khi xác nhận giao dịch, chuyển đổi dự phòng cơ sở dữ liệu và đo thông lượng vẫn cần kiểm chứng.
+Dịch vụ giữ bản ghi giữ hàng và bản ghi hủy vô thời hạn để xử lý yêu cầu gửi lại. Order Service đối soát các đơn đang chờ qua API giữ hàng. Đặt lại tồn kho dành cho mô phỏng vì thao tác này thay đổi số lượng khả dụng độc lập với giao dịch mua hàng. Bộ kiểm thử tích hợp đã kiểm tra tranh chấp đồng thời và hoàn tác giao dịch. Xem cách đối soát khi mất phản hồi và khởi động lại Order trong [Vòng đời đơn hàng](VONG_DOI_DON_HANG.md).

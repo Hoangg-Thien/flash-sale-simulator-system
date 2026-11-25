@@ -2,6 +2,14 @@ package com.hthien.flash_sale.controller;
 
 import java.util.List;
 
+import com.hthien.flash_sale.dto.request.CreateSimulationRequest;
+import com.hthien.flash_sale.dto.response.SimulationRequestResponse;
+import com.hthien.flash_sale.dto.response.SimulationRunResponse;
+import com.hthien.flash_sale.service.SimulationService;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,15 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.hthien.flash_sale.dto.request.CreateSimulationRequest;
-import com.hthien.flash_sale.dto.response.SimulationRequestResponse;
-import com.hthien.flash_sale.dto.response.SimulationRunResponse;
-import com.hthien.flash_sale.service.SimulationService;
-
-import io.swagger.v3.oas.annotations.Operation;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-
+@Profile("lab")
 @RestController
 @RequestMapping("/api/v1/simulations")
 @RequiredArgsConstructor

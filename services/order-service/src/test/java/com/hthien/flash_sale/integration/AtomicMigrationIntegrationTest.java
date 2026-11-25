@@ -29,7 +29,7 @@ class AtomicMigrationIntegrationTest {
                 VALUES (1, 'SUCCESS', 'REDIS', now())
                 """);
             Flyway.configure().dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
-                .load().migrate();
+                .target("7").load().migrate();
             statement.executeUpdate("""
                 INSERT INTO orders (product_id, order_status, lock_mode, requested_at)
                 VALUES (1, 'SUCCESS', 'ATOMIC', now())
@@ -59,6 +59,24 @@ class AtomicMigrationIntegrationTest {
                 """))
                 .isInstanceOf(java.sql.SQLException.class)
                 .extracting(error -> ((java.sql.SQLException) error).getSQLState()).isEqualTo("23514");
+
+            statement.executeUpdate("INSERT INTO orders(product_id,order_status,lock_mode,requested_at) VALUES(1,'PENDING','ATOMIC',now())");
+            assertThatThrownBy(() -> Flyway.configure()
+                .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword()).load().migrate())
+                .hasStackTraceContaining("Resolve legacy PENDING orders");
+            statement.executeUpdate("DELETE FROM orders WHERE order_status='PENDING'");
+            Flyway.configure().dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
+                .load().migrate();
+            try (var rows = statement.executeQuery("""
+                SELECT pending_initial_stock, to_regclass('inventory') IS NULL AS stock_moved,
+                       (SELECT count(*) FROM orders WHERE order_status='CONFIRMED') AS confirmed
+                FROM products WHERE id=1
+                """)) {
+                assertThat(rows.next()).isTrue();
+                assertThat(rows.getInt("pending_initial_stock")).isEqualTo(10);
+                assertThat(rows.getBoolean("stock_moved")).isTrue();
+                assertThat(rows.getInt("confirmed")).isEqualTo(2);
+            }
         }
     }
 }

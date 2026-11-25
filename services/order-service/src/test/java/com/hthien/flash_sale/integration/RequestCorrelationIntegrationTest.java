@@ -3,8 +3,6 @@ package com.hthien.flash_sale.integration;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -18,12 +16,6 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import com.hthien.flash_sale.service.OrderService;
-import com.hthien.flash_sale.service.SimulationService;
-import com.hthien.flash_sale.entity.Product;
-import com.hthien.flash_sale.entity.Inventory;
-import com.hthien.flash_sale.dto.request.CreateSimulationRequest;
 
 @AutoConfigureMockMvc
 @TestPropertySource(properties = "app.instance-id=correlation-test")
@@ -31,8 +23,6 @@ import com.hthien.flash_sale.dto.request.CreateSimulationRequest;
 class RequestCorrelationIntegrationTest extends BaseIntegrationTest {
 
     @Autowired private MockMvc mvc;
-    @Autowired private SimulationService simulationService;
-    @MockitoSpyBean private OrderService orderService;
 
     @AfterEach
     void clearMdc() {
@@ -75,28 +65,5 @@ class RequestCorrelationIntegrationTest extends BaseIntegrationTest {
             .andReturn().getResponse().getHeader("X-Request-Id");
         assertThat(actual).isNotBlank().isNotEqualTo(incoming);
         assertThat(java.util.UUID.fromString(actual)).isNotNull();
-    }
-
-    @Test
-    void simulationWorkers_inheritCorrelationWithoutChangingCallerContext() {
-        cleanDatabase();
-        Product product = productRepository.save(Product.builder().name("MDC simulation")
-            .price(java.math.BigDecimal.TEN).build());
-        inventoryRepository.save(Inventory.builder().product(product).stock(1).build());
-        var seen = new java.util.concurrent.CopyOnWriteArrayList<String>();
-        doAnswer(call -> {
-            seen.add(MDC.get("requestId") + ":" + MDC.get("instanceId"));
-            return call.callRealMethod();
-        }).when(orderService).createOrder(any(), any());
-        MDC.put("requestId", "simulation-123");
-        MDC.put("instanceId", "correlation-test");
-        CreateSimulationRequest request = new CreateSimulationRequest();
-        request.setProductId(product.getId());
-        request.setInitialStock(1);
-        request.setConcurrentUsers(2);
-        request.setLockMode("ATOMIC");
-        assertThat(simulationService.runSimulation(request).getSuccessCount()).isEqualTo(1);
-        assertThat(seen).containsExactlyInAnyOrder("simulation-123:correlation-test", "simulation-123:correlation-test");
-        assertThat(MDC.get("requestId")).isEqualTo("simulation-123");
     }
 }

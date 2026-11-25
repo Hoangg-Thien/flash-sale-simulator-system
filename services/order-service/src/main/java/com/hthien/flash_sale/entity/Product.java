@@ -48,6 +48,9 @@ public class Product {
     @ToString.Include
     private BigDecimal price;
 
+    @Column(name = "pending_initial_stock")
+    private Integer pendingInitialStock;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

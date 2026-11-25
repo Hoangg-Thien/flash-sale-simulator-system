@@ -1,4 +1,5 @@
 x-inventory: &inventory
+  networks: [default, inventory-db]
   image: flash-sale-inventory:local
   build:
     context: .
@@ -24,6 +25,7 @@ x-inventory: &inventory
 
 services:
   inventory-postgres:
+    networks: [inventory-db]
     image: postgres:17.9
     environment:
       POSTGRES_DB: inventory_db
@@ -38,6 +40,7 @@ services:
       retries: 15
 
   redis:
+    networks: [inventory-db]
     image: redis:7-alpine
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -53,3 +56,7 @@ services:
 
 volumes:
   inventory_data:
+
+networks:
+  inventory-db:
+    internal: true

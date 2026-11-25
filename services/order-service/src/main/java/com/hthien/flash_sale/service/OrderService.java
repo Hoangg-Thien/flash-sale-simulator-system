@@ -1,157 +1,128 @@
 package com.hthien.flash_sale.service;
 
-import java.time.Instant;
-import java.util.Map;
+import java.util.List;
 
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
-
-import com.hthien.flash_sale.concurrency.InventoryLockStrategy;
+import com.hthien.flash_sale.client.ReservationClient;
+import com.hthien.flash_sale.client.ReservationClient.Command;
+import com.hthien.flash_sale.client.ReservationClient.State;
 import com.hthien.flash_sale.dto.request.CreateOrderRequest;
 import com.hthien.flash_sale.dto.response.OrderResponse;
-import com.hthien.flash_sale.entity.Order;
-import com.hthien.flash_sale.entity.OrderItem;
-import com.hthien.flash_sale.entity.Product;
-import com.hthien.flash_sale.enums.LockMode;
 import com.hthien.flash_sale.enums.OrderStatus;
-import com.hthien.flash_sale.exception.DuplicateOrderException;
-import com.hthien.flash_sale.exception.InsufficientStockException;
-import com.hthien.flash_sale.exception.LockAcquisitionException;
 import com.hthien.flash_sale.exception.ProductNotFoundException;
-import com.hthien.flash_sale.repository.InventoryRepository;
 import com.hthien.flash_sale.repository.OrderRepository;
-import com.hthien.flash_sale.repository.ProductRepository;
-
-import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class OrderService {
-    
-    private final ProductRepository productRepository;
-    private final OrderRepository orderRepository;
-    private final InventoryRepository inventoryRepository;
-    private final TransactionTemplate transactionTemplate;
-    private final Map<String, InventoryLockStrategy> lockStrategies; 
+    public record Purchase(OrderResponse order, boolean created) {}
+    private record Claim(long id, boolean created) {}
+    private final JdbcClient jdbc;
+    private final TransactionTemplate tx;
+    private final OrderRepository orders;
+    private final ReservationClient inventory;
+    @Value("${orders.reconcile-age-ms:5000}") private long reconcileAge;
+    @Value("${orders.cancel-age-ms:60000}") private long cancelAge;
+    @Value("${inventory.lock-mode:ATOMIC}") private String mode;
 
-    public OrderResponse createOrder(CreateOrderRequest request, String idempotencyKey) {
-        long startTime = System.currentTimeMillis();
-
-        // 1. Check idempotency
-        checkIdempotency(idempotencyKey);
-
-        // 2. Validate Product
-        Product product = productRepository.findById(request.getProductId())
-        .orElseThrow(() -> new ProductNotFoundException(request.getProductId()));
-
-        // 3. Lấy Strategy theo lockMode
-        LockMode lockMode = parseLockMode(request.getLockMode());
-        InventoryLockStrategy strategy = getStrategy(lockMode);
-
-        // 4. Trừ kho và tạo Order trong Transaction
-        try {
-            return strategy.around(request.getProductId(), () -> transactionTemplate.execute(status -> {
-                // Strategy trừ kho theo cơ chế riêng của nó.
-                strategy.deductStock(request.getProductId(), request.getQuantity());
-
-                // Tạo và lưu đơn hàng
-                Order order = Order.builder()
-                .product(product)
-                .orderStatus(OrderStatus.SUCCESS)
-                .idempotencyKey(idempotencyKey)
-                .lockMode(lockMode)
-                .requestedAt(Instant.ofEpochMilli(startTime))
-                .build();
-
-                OrderItem item = OrderItem.builder()
-                .order(order)
-                .product(product)
-                .quantity(request.getQuantity())
-                .unitPrice(product.getPrice())
-                .build();
-
-                order.getItems().add(item);
-
-                try {
-                    order = orderRepository.save(order);
-                    long endTime = System.currentTimeMillis();
-                    order.setLatencyMs(endTime - startTime);
-                    order.setCompletedAt(Instant.ofEpochMilli(endTime));
-                    order = orderRepository.save(order);
-                    log.info("Order created: id={}, productId={}, lockMode={}",
-                        order.getId(), product.getId(), lockMode);
-                } catch (DataIntegrityViolationException e) {
-                    log.warn("DataIntegrityViolation on idempotency key={}", idempotencyKey);
-                    Order existingOrder = orderRepository.findByIdempotencyKey(idempotencyKey)
-                        .orElseThrow(() -> e);
-                    throw new DuplicateOrderException(existingOrder);
-                }
-                return OrderResponse.from(order);
-            }));
-
-        } catch (InsufficientStockException | LockAcquisitionException | DuplicateOrderException e) {
-            throw e;
-
-        } catch (OptimisticLockException | ObjectOptimisticLockingFailureException e) {
-            log.warn("Optimistic lock conflict: productId={}", request.getProductId());
-            throw new InsufficientStockException(request.getProductId(), request.getQuantity(), 0);
-        
-        } catch (Exception e) {
-            if (e.getCause() instanceof InsufficientStockException ise) {
-                throw ise;
-            }
-            if (e.getCause() instanceof LockAcquisitionException lae) {
-                throw lae;
-            }
-            if (e.getCause() instanceof DuplicateOrderException doe) {
-                throw doe;
-            }
-            if (e.getCause() instanceof OptimisticLockException
-                || e.getCause() instanceof ObjectOptimisticLockingFailureException) {
-                log.warn("Optimistic lock conflict (wrapped): productId={}", request.getProductId());
-                throw new InsufficientStockException(request.getProductId(), request.getQuantity(), 0);
-            }
-
-            throw new RuntimeException("Unexpected error during purchase", e);
-        }
+    public OrderResponse createOrder(CreateOrderRequest request, String key) {
+        return purchase(request, key).order();
     }
 
-    private void checkIdempotency(String idempotencyKey) {
-        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
-            orderRepository.findByIdempotencyKey(idempotencyKey).ifPresent(existingOrder -> {
-            log.info("Duplicate request detected: idempotencyKey={}, orderId={}",
-            idempotencyKey, existingOrder.getId());
-            throw new DuplicateOrderException(existingOrder);
-            });
+    public Purchase purchase(CreateOrderRequest request, String key) {
+        if (key == null || key.isBlank() || key.length() > 64)
+            throw new IllegalArgumentException("Idempotency-Key must contain 1 to 64 characters");
+        Claim claim = tx.execute(status -> claim(request, key));
+        if (claim.created()) {
+            var command = new Command(claim.id(), request.getProductId(), request.getQuantity());
+            finish(claim.id(), inventory.reserve(command), false);
         }
+        return new Purchase(get(claim.id()), claim.created());
     }
 
-    private InventoryLockStrategy getStrategy(LockMode lockMode) {
-        String beanName = switch (lockMode) {
-            case NONE -> "noLockStrategy";
-            case OPTIMISTIC -> "optimisticLockStrategy";
-            case PESSIMISTIC -> "pessimisticLockStrategy";
-            case REDIS -> "redisLockStrategy";
-            case ATOMIC -> "atomicUpdateStrategy";
-        };
-        InventoryLockStrategy strategy = lockStrategies.get(beanName);
-        if (strategy == null) {
-            throw new IllegalStateException("No strategy found for lockMode: " + lockMode);
+    private Claim claim(CreateOrderRequest request, String key) {
+        var existing = orders.findByIdempotencyKey(key);
+        if (existing.isPresent()) return replay(request, existing.get());
+        if (request.getLockMode() != null && !mode.equalsIgnoreCase(request.getLockMode()))
+            throw new IllegalArgumentException("Inventory lock mode is configured per deployment");
+        var ids = jdbc.sql("""
+            INSERT INTO orders(product_id,order_status,idempotency_key,lock_mode,requested_at,next_attempt_at)
+            SELECT id,'PENDING',?,?,now(),now() + ? * interval '1 millisecond'
+            FROM products WHERE id=? AND pending_initial_stock IS NULL
+            ON CONFLICT (idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING RETURNING id
+            """).params(key, mode, reconcileAge, request.getProductId()).query(Long.class).list();
+        if (ids.isEmpty()) {
+            var winner = orders.findByIdempotencyKey(key);
+            if (winner.isPresent()) return replay(request, winner.get());
+            if (jdbc.sql("SELECT id FROM products WHERE id=?").param(request.getProductId()).query(Long.class).optional().isEmpty())
+                throw new ProductNotFoundException(request.getProductId());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Stock initialization pending");
         }
-        return strategy;
+        long id = ids.getFirst();
+        jdbc.sql("""
+            INSERT INTO order_items(order_id,product_id,quantity,unit_price)
+            SELECT ?,id,?,price FROM products WHERE id=?
+            """).params(id, request.getQuantity(), request.getProductId()).update();
+        return new Claim(id, true);
     }
 
-    private LockMode parseLockMode(String lockModeStr) {
-        try {
-            return LockMode.valueOf(lockModeStr.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(
-                "Invalid lockMode: " + lockModeStr + ". Valid values: NONE, OPTIMISTIC, PESSIMISTIC, REDIS, ATOMIC");
-        }
+    private Claim replay(CreateOrderRequest request, com.hthien.flash_sale.entity.Order order) {
+        if ((request.getLockMode() != null && !order.getLockMode().name().equalsIgnoreCase(request.getLockMode()))
+                || !order.getProduct().getId().equals(request.getProductId()) || order.getItems().size() != 1
+                || !order.getItems().getFirst().getQuantity().equals(request.getQuantity()))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Idempotency-Key already used with another payload");
+        return new Claim(order.getId(), false);
+    }
+
+    public OrderResponse get(long id) {
+        return tx.execute(s -> OrderResponse.from(orders.findById(id).orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"))));
+    }
+
+    private void finish(long id, State state, boolean cancelling) {
+        OrderStatus terminal;
+        if (state == State.RESERVED && !cancelling) terminal = OrderStatus.CONFIRMED;
+        else if (state == State.REJECTED || state == State.RELEASED) terminal = OrderStatus.REJECTED;
+        else return;
+        String reason = state == State.RELEASED ? "CANCELLED" : "RESERVATION_REJECTED";
+        jdbc.sql("""
+            UPDATE orders SET order_status=?, completed_at=now(),
+                latency_ms=(extract(epoch FROM now()-requested_at)*1000)::bigint,
+                error_message=CASE WHEN ? THEN NULL ELSE ? END
+            WHERE id=? AND order_status='PENDING' AND cancel_requested=?
+            """).params(terminal.name(), terminal == OrderStatus.CONFIRMED, reason, id, cancelling).update();
+    }
+
+    @Scheduled(fixedDelayString = "${orders.reconcile-delay-ms:1000}")
+    public void reconcile() {
+        List<Long> ids = jdbc.sql("""
+            SELECT id FROM orders WHERE order_status='PENDING' AND next_attempt_at <= now()
+              AND requested_at <= now() - ? * interval '1 millisecond'
+            ORDER BY next_attempt_at,id LIMIT 32
+            """).param(reconcileAge).query(Long.class).list();
+        for (long id : ids) reconcile(id);
+    }
+
+    private void reconcile(long id) {
+        // Autocommit the cancellation fence before any remote side effect.
+        var flags = jdbc.sql("""
+            UPDATE orders SET cancel_requested=cancel_requested OR requested_at <= now() - ? * interval '1 millisecond',
+                next_attempt_at=now() + ? * interval '1 millisecond'
+            WHERE id=? AND order_status='PENDING' AND next_attempt_at<=now() RETURNING cancel_requested
+            """).params(cancelAge, Math.max(1, reconcileAge), id).query(Boolean.class).list();
+        if (flags.isEmpty()) return;
+        var item = get(id).getItems().getFirst();
+        var command = new Command(id, item.getProductId(), item.getQuantity());
+        boolean cancelling = flags.getFirst();
+        State state = cancelling ? inventory.release(command) : inventory.query(command);
+        if (!cancelling && state == State.MISSING) state = inventory.reserve(command);
+        finish(id, state, cancelling);
     }
 }

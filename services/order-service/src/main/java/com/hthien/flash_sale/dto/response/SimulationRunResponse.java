@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.List;
 
 import com.hthien.flash_sale.entity.SimulationRun;
+import com.hthien.flash_sale.enums.SimulationOutcome;
 
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class SimulationRunResponse {
     private Integer finalStock;
     private Integer successCount;
     private Integer failedCount;
+    private Long pendingCount;
     private Boolean oversellingDetected;
 
     // thoi gian
@@ -53,6 +55,7 @@ public class SimulationRunResponse {
         .finalStock(run.getFinalStock())
         .successCount(run.getSuccessCount())
         .failedCount(run.getFailedCount())
+        .pendingCount(requests.stream().filter(r -> r.getOrderStatus() == SimulationOutcome.PENDING).count())
         .oversellingDetected(run.getOversellingDetected())
         .startedAt(run.getStartedAt())
         .finishedAt(run.getFinishedAt())

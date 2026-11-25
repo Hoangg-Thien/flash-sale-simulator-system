@@ -1,7 +1,7 @@
 package com.hthien.flash_sale.dto.response;
 
 import com.hthien.flash_sale.entity.SimulationRequest;
-import com.hthien.flash_sale.enums.OrderStatus;
+import com.hthien.flash_sale.enums.SimulationOutcome;
 
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +12,7 @@ public class SimulationRequestResponse {
 
     private Long id;
     private Integer threadIndex;
-    private OrderStatus orderStatus;
+    private SimulationOutcome orderStatus;
     private Long latencyMs;
     private Integer httpStatus;
     private String errorMessage;

@@ -1,6 +1,6 @@
 package com.hthien.flash_sale.entity;
 
-import com.hthien.flash_sale.enums.OrderStatus;
+import com.hthien.flash_sale.enums.SimulationOutcome;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -54,7 +54,7 @@ public class SimulationRequest {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private OrderStatus status; 
+    private SimulationOutcome status;
 
     @Column(name = "latency_ms")
     private Long latencyMs;
