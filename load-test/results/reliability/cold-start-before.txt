@@ -1,0 +1,3 @@
+dependency failed to start: container cold-redis-ec1f43e52d-redis-1 is unhealthy
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['docker', 'compose', '-p', 'cold-redis-ec1f43e52d', '-f', 'docker-compose.inventory.yml', '-f', '/tmp/tmpxy7i_9f2/dead-redis.yml', 'up', '--no-build', '--wait', '-d', 'inventory-a']' returned non-zero exit status 1.

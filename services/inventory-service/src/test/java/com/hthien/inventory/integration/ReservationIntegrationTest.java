@@ -26,6 +26,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -61,6 +64,7 @@ class ReservationIntegrationTest {
                 "--spring.datasource.url=" + postgres.getJdbcUrl(),
                 "--spring.datasource.username=" + postgres.getUsername(),
                 "--spring.datasource.password=" + postgres.getPassword(), "--inventory.lock-mode=" + MODE,
+                "--inventory.unsafe-modes-enabled=" + MODE.equals("NONE"),
                 "--inventory.redis-address=redis://" + redis.getHost() + ":" + redis.getFirstMappedPort(),
                 "--logging.level.root=WARN",
                 "--logging.level.org.springframework.boot.web.embedded.tomcat.TomcatWebServer=INFO")
@@ -125,6 +129,7 @@ class ReservationIntegrationTest {
             assertStatus(response, "RESERVED");
         }
         assertThat(stock(11)).isEqualTo(7);
+        assertThat(scalar("SELECT version FROM inventory WHERE product_id=11")).isEqualTo(1);
         assertThat(scalar("SELECT count(*) FROM stock_reservations")).isEqualTo(1);
         assertStatus(send(URLS.get(1), "GET", RESERVATIONS + "/1", null), "RESERVED");
 
@@ -135,6 +140,7 @@ class ReservationIntegrationTest {
         }
         assertStatus(reserve(0, 1, 11, 3), "RELEASED");
         assertThat(stock(11)).isEqualTo(10);
+        assertThat(scalar("SELECT version FROM inventory WHERE product_id=11")).isEqualTo(2);
         assertThat(scalar("SELECT count(*) FROM stock_reservations WHERE status = 'RELEASED'")).isEqualTo(1);
     }
 
@@ -204,6 +210,80 @@ class ReservationIntegrationTest {
         }
         assertThat(stock(11)).isEqualTo(10 - 3 * reserved);
         assertThat(scalar("SELECT count(*) FROM stock_reservations")).isEqualTo(32);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 10})
+    void twentyBuyersAcrossProcessesConserveSingleUnitStock(int initial) throws Exception {
+        seed(11, initial);
+        var responses = race(IntStream.range(0, 20)
+            .mapToObj(i -> (Callable<HttpResponse<String>>) () -> reserve(i, 100 + i, 11, 1)).toList());
+        long successes = 0;
+        for (var response : responses) {
+            assertThat(response.statusCode()).as(response.body()).isEqualTo(200);
+            if (JSON.readTree(response.body()).path("status").asText().equals("RESERVED")) successes++;
+        }
+        assertThat(successes).isBetween(initial == 0 ? 0L : 1L, (long) initial);
+        if (!MODE.equals("OPTIMISTIC")) assertThat(successes).isEqualTo(initial);
+        assertThat(stock(11)).isEqualTo(initial - successes);
+        assertThat(scalar("SELECT count(*) FROM stock_reservations WHERE status='RESERVED'")).isEqualTo(successes);
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "inventory.test.lock-mode", matches = "NONE")
+    void unsafeLabModeCanCommitMoreReservationsThanStock() throws Exception {
+        seed(11, 1);
+        race(IntStream.range(0, 32)
+            .mapToObj(i -> (Callable<HttpResponse<String>>) () -> reserve(i, i + 1, 11, 1)).toList());
+        assertThat(scalar("SELECT count(*) FROM stock_reservations WHERE status='RESERVED'")).isGreaterThan(1);
+        assertThat(stock(11)).isZero();
+    }
+
+    @Test
+    void negativeStockIsRejectedByPostgres() throws Exception {
+        seed(11, 5);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> execute("UPDATE inventory SET stock=-1"))
+            .isInstanceOf(java.sql.SQLException.class)
+            .extracting(e -> ((java.sql.SQLException)e).getSQLState()).isEqualTo("23514");
+        assertThat(stock(11)).isEqualTo(5);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    @EnabledIfSystemProperty(named = "inventory.test.lock-mode", matches = "REDIS")
+    void redisLockIsHeldThroughDatabaseCommit(boolean failCommit) throws Exception {
+        seed(11, 5);
+        execute("""
+            CREATE FUNCTION gate_test_commit() RETURNS trigger LANGUAGE plpgsql AS $$
+            BEGIN
+                PERFORM pg_advisory_xact_lock(93127);
+            """ + (failCommit ? "RAISE EXCEPTION 'injected rollback';" : "") + """
+                RETURN NEW;
+            END; $$;
+            CREATE CONSTRAINT TRIGGER gate_test_commit AFTER INSERT ON stock_reservations
+            DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION gate_test_commit()
+            """);
+        try (var gate = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+             var stmt = gate.createStatement(); var pool = Executors.newVirtualThreadPerTaskExecutor()) {
+            stmt.execute("SELECT pg_advisory_lock(93127)");
+            var reply = pool.submit(() -> reserve(0, 71, 11, 2));
+            try {
+                await().atMost(Duration.ofSeconds(5)).until(() -> scalar(
+                    "SELECT count(*) FROM pg_locks WHERE locktype='advisory' AND objid=93127 AND NOT granted") == 1);
+                assertThat(redis.execInContainer("redis-cli","EXISTS","lock:inventory-service:11").getStdout().trim())
+                    .isEqualTo("1");
+                assertThat(stock(11)).isEqualTo(5);
+            } finally {
+                stmt.execute("SELECT pg_advisory_unlock(93127)");
+            }
+            assertThat(reply.get(10, TimeUnit.SECONDS).statusCode()).isEqualTo(failCommit ? 500 : 200);
+            assertThat(redis.execInContainer("redis-cli","EXISTS","lock:inventory-service:11").getStdout().trim())
+                .isEqualTo("0");
+            assertThat(stock(11)).isEqualTo(failCommit ? 5 : 3);
+            assertThat(scalar("SELECT count(*) FROM stock_reservations")).isEqualTo(failCommit ? 0 : 1);
+        } finally {
+            execute("DROP FUNCTION gate_test_commit() CASCADE");
+        }
     }
 
     @Test

@@ -15,8 +15,6 @@ x-inventory: &inventory
   depends_on:
     inventory-postgres:
       condition: service_healthy
-    redis:
-      condition: service_healthy
   healthcheck:
     test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/actuator/health"]
     interval: 5s

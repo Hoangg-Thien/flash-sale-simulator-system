@@ -1,0 +1,8 @@
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.007 s -- in com.hthien.flash_sale.FlashSaleApplicationTests
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.938 s -- in com.hthien.flash_sale.integration.AtomicMigrationIntegrationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 20.27 s -- in com.hthien.flash_sale.integration.OrderServiceIntegrationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.136 s -- in com.hthien.flash_sale.integration.RequestCorrelationIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.677 s -- in com.hthien.flash_sale.integration.StockProvisioningIntegrationTest
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 1
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 18.48 s -- in com.hthien.inventory.integration.ReservationIntegrationTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0

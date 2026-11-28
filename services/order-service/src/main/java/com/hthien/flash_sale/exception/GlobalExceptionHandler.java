@@ -3,6 +3,7 @@ package com.hthien.flash_sale.exception;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -31,6 +32,12 @@ public class GlobalExceptionHandler {
         .map(e -> e.getField() + ": " + e.getDefaultMessage())
         .collect(Collectors.joining(", "));
         return ErrorResponse.of(400, "VALIDATION_FAILED", message, request.getRequestURI());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleInvalidBody(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        return ErrorResponse.of(400, "INVALID_BODY", "Malformed or invalid request body", request.getRequestURI());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

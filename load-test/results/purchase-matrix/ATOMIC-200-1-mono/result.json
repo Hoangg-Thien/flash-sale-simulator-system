@@ -1,0 +1,35 @@
+{
+  "arch": "mono",
+  "mode": "ATOMIC",
+  "vus": 200,
+  "rep": 1,
+  "seconds": 10,
+  "http": {
+    "201": 6127
+  },
+  "total": 6127,
+  "accepted_rps": 589.4179894179895,
+  "confirmed_rps": 589.4179894179895,
+  "http_rps": 589.4179894179895,
+  "error_rate": 0.0,
+  "outcomes": {
+    "SUCCESS": 6127
+  },
+  "confirmed": 6127,
+  "accepted_to_terminal_ms": [],
+  "unmatched_202": 0,
+  "latency_ms": {
+    "p(95)": 1204.5658347,
+    "p(99)": 1692.764281559999,
+    "max": 2889.091867,
+    "min": 1.397374,
+    "avg": 331.94470896817387,
+    "med": 82.082981
+  },
+  "verification": {
+    "issues": [],
+    "pending_ids": []
+  },
+  "stock_remaining": 3193873,
+  "balance_delta": 0
+}

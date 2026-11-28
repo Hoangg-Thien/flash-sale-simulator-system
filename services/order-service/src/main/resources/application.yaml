@@ -7,6 +7,10 @@ spring:
       pool:
         size: 2
 
+  jackson:
+    deserialization:
+      accept-float-as-int: false
+
   datasource:
     url: jdbc:postgresql://localhost:5435/order_db
     username: ${DB_USERNAME:postgres}

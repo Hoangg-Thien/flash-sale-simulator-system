@@ -1,0 +1,293 @@
+{
+  "manifest": {
+    "historical_ids": [
+      1
+    ],
+    "opening_stock": {
+      "1": 17
+    }
+  },
+  "duplicate_http": [
+    201,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202,
+    202
+  ],
+  "before": {
+    "orders": [
+      {
+        "id": 1,
+        "product_id": 1,
+        "idempotency_key": "historical",
+        "order_status": "CONFIRMED",
+        "cancel_requested": false,
+        "quantity": 3,
+        "item_product": 1,
+        "unit_price": 12.0,
+        "requested_at": "2026-11-24T14:47:17.669+00:00",
+        "completed_at": "2026-11-24T14:47:17.796+00:00"
+      },
+      {
+        "id": 2,
+        "product_id": 1,
+        "idempotency_key": "same-key",
+        "order_status": "CONFIRMED",
+        "cancel_requested": false,
+        "quantity": 3,
+        "item_product": 1,
+        "unit_price": 12.0,
+        "requested_at": "2026-11-24T14:47:39.05885+00:00",
+        "completed_at": "2026-11-24T14:47:39.155384+00:00"
+      },
+      {
+        "id": 10,
+        "product_id": 1,
+        "idempotency_key": "sold-out",
+        "order_status": "REJECTED",
+        "cancel_requested": false,
+        "quantity": 40,
+        "item_product": 1,
+        "unit_price": 12.0,
+        "requested_at": "2026-11-24T14:47:39.17003+00:00",
+        "completed_at": "2026-11-24T14:47:39.227472+00:00"
+      },
+      {
+        "id": 11,
+        "product_id": 1,
+        "idempotency_key": "unresolved",
+        "order_status": "PENDING",
+        "cancel_requested": false,
+        "quantity": 3,
+        "item_product": 1,
+        "unit_price": 12.0,
+        "requested_at": "2026-11-24T14:47:39.611777+00:00",
+        "completed_at": null
+      }
+    ],
+    "reservations": [
+      {
+        "order_id": 2,
+        "product_id": 1,
+        "quantity": 3,
+        "status": "RESERVED"
+      },
+      {
+        "order_id": 10,
+        "product_id": 1,
+        "quantity": 40,
+        "status": "REJECTED"
+      }
+    ],
+    "inventory": [
+      {
+        "product_id": 1,
+        "stock": 14,
+        "version": 1,
+        "initial_stock": 17
+      }
+    ]
+  },
+  "public_data": {
+    "order-postgres": {
+      "flyway_schema_history": {
+        "rows": 9,
+        "sha256": "ac3c3c628e21d17bc45cfaecef7acc218efcf72b13d07daac36bd0cb4ae4ce10"
+      },
+      "order_items": {
+        "rows": 4,
+        "sha256": "92471c92fe23e1c4c2680ac70ec060da509f7d959777f4673a9c3b10e906bb5d"
+      },
+      "order_items_id_seq": {
+        "rows": 1,
+        "sha256": "feff453875ed1e81f9290b69cdc50271a0e2223b30ae2b20852b59138fe32bb4"
+      },
+      "orders": {
+        "rows": 4,
+        "sha256": "797a1c7a069db563df2ba68dd64d2b47c42d891db24075ad90357d627f1ef3e4"
+      },
+      "orders_id_seq": {
+        "rows": 1,
+        "sha256": "acc4ba8344c3cb194cad2ccfc88b196b753391374f7de7676a5006528dbae75b"
+      },
+      "products": {
+        "rows": 1,
+        "sha256": "60ca1ee5fe5095a47bff20da39ecc0d3ec8e42f70f0cc2fa6575ac8177be697f"
+      },
+      "products_id_seq": {
+        "rows": 1,
+        "sha256": "fa138d25f2d3d9ee5583f1cacd890c45e24f7c922e78987136426dd48ab053f3"
+      },
+      "simulation_requests": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "simulation_requests_id_seq": {
+        "rows": 1,
+        "sha256": "af48a82b36fc68b01152ab2806050de5ddb1db6f5ca10b1094b4ba1ad3fbf142"
+      },
+      "simulation_runs": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "simulation_runs_id_seq": {
+        "rows": 1,
+        "sha256": "af48a82b36fc68b01152ab2806050de5ddb1db6f5ca10b1094b4ba1ad3fbf142"
+      }
+    },
+    "inventory-postgres": {
+      "flyway_schema_history": {
+        "rows": 3,
+        "sha256": "39dcb3ddffd197f2fd3a55a315d9149da0b3b484077d157cce4f596bfa6c51f1"
+      },
+      "inventory": {
+        "rows": 1,
+        "sha256": "24882b4e0549b7fde63c01b657ceea04ac437718785dca8ebf073065920852c2"
+      },
+      "inventory_id_seq": {
+        "rows": 1,
+        "sha256": "fa138d25f2d3d9ee5583f1cacd890c45e24f7c922e78987136426dd48ab053f3"
+      },
+      "stock_reservations": {
+        "rows": 2,
+        "sha256": "f140f41c6ed2c255a75df3a68c2b168e98afed029b244f05f8e403615592b91d"
+      },
+      "stock_reservations_id_seq": {
+        "rows": 1,
+        "sha256": "e2df63924614d4769903fe1208cf4da44c25108a95b1e97d60ba1891be896539"
+      }
+    }
+  },
+  "dump_sha256": {
+    "order-postgres": "2ced4b6b14feb660b11b0ce183325e1624136543c5bad64456bdef2093bd7557",
+    "inventory-postgres": "75e17bb14526767526e717d4ff052e11d4968cd61e1e0c411db6dafa608284ae"
+  },
+  "identical_before_startup": true,
+  "after": {
+    "orders": [
+      {
+        "id": 1,
+        "product_id": 1,
+        "idempotency_key": "historical",
+        "order_status": "CONFIRMED",
+        "cancel_requested": false,
+        "quantity": 3,
+        "item_product": 1,
+        "unit_price": 12.0,
+        "requested_at": "2026-11-24T14:47:17.669+00:00",
+        "completed_at": "2026-11-24T14:47:17.796+00:00"
+      },
+      {
+        "id": 2,
+        "product_id": 1,
+        "idempotency_key": "same-key",
+        "order_status": "CONFIRMED",
+        "cancel_requested": false,
+        "quantity": 3,
+        "item_product": 1,
+        "unit_price": 12.0,
+        "requested_at": "2026-11-24T14:47:39.05885+00:00",
+        "completed_at": "2026-11-24T14:47:39.155384+00:00"
+      },
+      {
+        "id": 10,
+        "product_id": 1,
+        "idempotency_key": "sold-out",
+        "order_status": "REJECTED",
+        "cancel_requested": false,
+        "quantity": 40,
+        "item_product": 1,
+        "unit_price": 12.0,
+        "requested_at": "2026-11-24T14:47:39.17003+00:00",
+        "completed_at": "2026-11-24T14:47:39.227472+00:00"
+      },
+      {
+        "id": 11,
+        "product_id": 1,
+        "idempotency_key": "unresolved",
+        "order_status": "CONFIRMED",
+        "cancel_requested": false,
+        "quantity": 3,
+        "item_product": 1,
+        "unit_price": 12.0,
+        "requested_at": "2026-11-24T14:47:39.611777+00:00",
+        "completed_at": "2026-11-24T14:48:04.192328+00:00"
+      }
+    ],
+    "reservations": [
+      {
+        "order_id": 2,
+        "product_id": 1,
+        "quantity": 3,
+        "status": "RESERVED"
+      },
+      {
+        "order_id": 10,
+        "product_id": 1,
+        "quantity": 40,
+        "status": "REJECTED"
+      },
+      {
+        "order_id": 11,
+        "product_id": 1,
+        "quantity": 3,
+        "status": "RESERVED"
+      }
+    ],
+    "inventory": [
+      {
+        "product_id": 1,
+        "stock": 11,
+        "version": 2,
+        "initial_stock": 17
+      }
+    ]
+  },
+  "result": {
+    "orders": {
+      "CONFIRMED": 3,
+      "REJECTED": 1
+    },
+    "reservations": {
+      "RESERVED": 2,
+      "REJECTED": 1
+    },
+    "pending_ids": [],
+    "historical_count": 1,
+    "stock": {
+      "1": 11
+    },
+    "issues": []
+  },
+  "elapsed_with_restore_s": 27.834081646999948,
+  "age_limit_s": 90,
+  "pending_lifetime_s": 24.580551,
+  "passed": true
+}

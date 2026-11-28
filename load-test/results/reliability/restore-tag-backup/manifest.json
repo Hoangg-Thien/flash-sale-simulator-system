@@ -1,0 +1,12 @@
+{
+  "historical_ids": [
+    1
+  ],
+  "opening_stock": {
+    "1": 17
+  },
+  "sha256": {
+    "order-postgres": "2ced4b6b14feb660b11b0ce183325e1624136543c5bad64456bdef2093bd7557",
+    "inventory-postgres": "75e17bb14526767526e717d4ff052e11d4968cd61e1e0c411db6dafa608284ae"
+  }
+}

@@ -93,6 +93,56 @@ class OrderServiceIntegrationTest {
     }
 
     @Test
+    void fractionalIdentifiersAndQuantitiesCannotCreateAnOrder() throws Exception {
+        assertThat(post("fraction-qty", "{\"productId\":1,\"quantity\":1.9}").statusCode()).isEqualTo(400);
+        assertThat(post("fraction-id", "{\"productId\":1.9,\"quantity\":1}").statusCode()).isEqualTo(400);
+        assertThat(query("SELECT count(*) FROM orders")).isEqualTo("0");
+        assertThat(peer.reserveCalls).hasValue(0);
+    }
+
+    @Test
+    void failureToPersistItemRollsBackOrderBeforeInventoryCallAndAllowsRetry() throws Exception {
+        execute("ALTER TABLE order_items ADD CONSTRAINT test_item_failure CHECK(quantity <> 2)");
+        try {
+            assertThat(purchase("item-failure", 2).statusCode()).isEqualTo(500);
+            assertThat(query("SELECT count(*) FROM orders")).isEqualTo("0");
+            assertThat(query("SELECT count(*) FROM order_items")).isEqualTo("0");
+            assertThat(peer.reserveCalls).hasValue(0);
+        } finally {
+            execute("ALTER TABLE order_items DROP CONSTRAINT test_item_failure");
+        }
+        assertThat(purchase("item-failure", 2).statusCode()).isEqualTo(201);
+        assertThat(peer.stock).isEqualTo(1);
+    }
+
+    @Test
+    void invalidAndMissingProductRequestsLeaveBothSidesUntouched() throws Exception {
+        assertThat(post("missing", "{\"productId\":99,\"quantity\":1}").statusCode()).isEqualTo(404);
+        assertThat(post("wrong-mode", "{\"productId\":1,\"quantity\":1,\"lockMode\":\"NONE\"}").statusCode()).isEqualTo(400);
+        assertThat(purchase("zero", 0).statusCode()).isEqualTo(400);
+        assertThat(purchase("excess", 101).statusCode()).isEqualTo(400);
+        assertThat(purchase(" ", 1).statusCode()).isEqualTo(400);
+        assertThat(query("SELECT count(*) FROM orders")).isEqualTo("0");
+        assertThat(peer.reserveCalls).hasValue(0);
+    }
+
+    @Test
+    void twoPayloadsContendingForOneKeyChargeOnlyTheWinner() throws Exception {
+        var start = new CountDownLatch(1);
+        try (var worker = Executors.newVirtualThreadPerTaskExecutor()) {
+            var first = worker.submit(() -> { start.await(); return purchase("contended", 1).statusCode(); });
+            var second = worker.submit(() -> { start.await(); return purchase("contended", 2).statusCode(); });
+            start.countDown();
+            assertThat(java.util.List.of(first.get(15, TimeUnit.SECONDS), second.get(15, TimeUnit.SECONDS)))
+                .containsExactlyInAnyOrder(201, 409);
+        }
+        int charged = Integer.parseInt(query("SELECT quantity FROM order_items"));
+        assertThat(peer.stock).isEqualTo(3 - charged);
+        assertThat(peer.reserveCalls).hasValue(1);
+        assertThat(query("SELECT count(*) FROM orders")).isEqualTo("1");
+    }
+
+    @Test
     void concurrentRetriesCreateOneSnapshotAndOneReservation() throws Exception {
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var start = new CountDownLatch(1);

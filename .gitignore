@@ -52,9 +52,18 @@ replay_pid*.log
 .DS_Store
 Thumbs.db
 
-# K6 Load Test Results
-load-test/results/*.json
-load-test/results/*.html
+# Ad hoc k6 exports at the results root
+/load-test/results/*.json
+/load-test/results/*.html
+
+# Pilot metadata and summaries remain available
+/load-test/results/purchase-pilot/*/
+/load-test/results/purchase-matrix/*/console.txt
+/load-test/results/purchase-matrix/*/samples.json.gz
+/load-test/results/purchase-matrix/*/database.json.gz
 
 # Verbose local test reports; keep the Redis lock baseline evidence
 /load-test/results/redis-lock-baseline/ordering-*.xml
+
+# Python bytecode caches
+__pycache__/

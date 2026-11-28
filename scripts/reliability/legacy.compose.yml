@@ -1,0 +1,28 @@
+services:
+  source-db:
+    image: postgres:17.9
+    environment:
+      POSTGRES_DB: flashsale
+      POSTGRES_USER: legacy
+      POSTGRES_PASSWORD: legacy
+    healthcheck:
+      test: ["CMD","pg_isready","-h","127.0.0.1","-U","legacy","-d","flashsale"]
+      interval: 2s
+      retries: 30
+  source-redis:
+    image: redis:7-alpine
+  source-app:
+    image: ${LEGACY_IMAGE:-flash-sale-monolith:local}
+    ports: ["127.0.0.1::8080"]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://source-db:5432/flashsale
+      SPRING_DATASOURCE_USERNAME: legacy
+      SPRING_DATASOURCE_PASSWORD: legacy
+      REDIS_HOST: source-redis
+    depends_on:
+      source-db: {condition: service_healthy}
+      source-redis: {condition: service_started}
+    healthcheck:
+      test: ["CMD","wget","-qO-","http://127.0.0.1:8080/actuator/health"]
+      interval: 2s
+      retries: 45
