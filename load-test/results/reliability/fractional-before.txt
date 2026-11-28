@@ -1,0 +1,10 @@
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 7.305 s <<< FAILURE! -- in com.hthien.flash_sale.integration.OrderServiceIntegrationTest
+[ERROR] com.hthien.flash_sale.integration.OrderServiceIntegrationTest.fractionalIdentifiersAndQuantitiesCannotCreateAnOrder -- Time elapsed: 0.432 s <<< FAILURE!
+expected: 400
+ but was: 201
+	at com.hthien.flash_sale.integration.OrderServiceIntegrationTest.fractionalIdentifiersAndQuantitiesCannotCreateAnOrder(OrderServiceIntegrationTest.java:97)
+[ERROR]   OrderServiceIntegrationTest.fractionalIdentifiersAndQuantitiesCannotCreateAnOrder:97
+expected: 400
+ but was: 201
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE

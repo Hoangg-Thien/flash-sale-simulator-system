@@ -1,0 +1,16 @@
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.005 s -- in com.hthien.flash_sale.FlashSaleApplicationTests
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.067 s -- in com.hthien.flash_sale.integration.AtomicMigrationIntegrationTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 19.66 s -- in com.hthien.flash_sale.integration.OrderServiceIntegrationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.291 s -- in com.hthien.flash_sale.integration.RequestCorrelationIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.660 s -- in com.hthien.flash_sale.integration.SimulationWorkersIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.038 s -- in com.hthien.flash_sale.integration.StockProvisioningIntegrationTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 1
+[WARNING] Tests run: 16, Failures: 0, Errors: 0, Skipped: 2, Time elapsed: 10.67 s -- in com.hthien.inventory.integration.ReservationIntegrationTest
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 2
+[INFO] Reactor Summary for flash-sale-parent 0.0.1-SNAPSHOT:
+[INFO] flash-sale-parent .................................. SUCCESS [  0.086 s]
+[INFO] flash-sale ......................................... SUCCESS [ 33.137 s]
+[INFO] inventory-service .................................. SUCCESS [ 12.353 s]
+[INFO] BUILD SUCCESS
+[INFO] Total time:  45.820 s
+[INFO] Finished at: 2026-11-24T21:21:47+07:00

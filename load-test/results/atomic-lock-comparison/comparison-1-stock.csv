@@ -1,0 +1,6 @@
+name,final_stock,confirmed
+NONE Comparison Item,0,5
+OPTIMISTIC Comparison Item,0,5
+PESSIMISTIC Comparison Item,0,5
+REDIS Comparison Item,0,5
+ATOMIC Comparison Item,0,5

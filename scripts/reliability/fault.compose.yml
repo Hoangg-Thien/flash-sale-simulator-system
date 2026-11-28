@@ -1,0 +1,15 @@
+x-probe: &probe
+  entrypoint: ["java", "-XX:MaxRAMPercentage=75", "-Dloader.path=/test", "-cp", "/app/app.jar", "org.springframework.boot.loader.launch.PropertiesLauncher"]
+  volumes:
+    - ${BARRIER_CLASSES:?}:/test:ro
+  environment:
+    TEST_COMMIT_REPLY_BARRIER: "true"
+services:
+  inventory-a: *probe
+  inventory-b: *probe
+  order-service:
+    environment:
+      INVENTORY_READ_TIMEOUT_MS: 30000
+      INVENTORY_RETRIES: 1
+      ORDERS_RECONCILE_AGE_MS: ${PROBE_RECONCILE_AGE:-1500}
+      ORDERS_CANCEL_AGE_MS: ${PROBE_CANCEL_AGE:-60000}

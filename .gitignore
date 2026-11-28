@@ -35,13 +35,39 @@ build/
 # Logs
 *.log
 
-# Env
+# Local environment and AWS CLI credentials
 .env
+.env.*
+!.env.example
+/.aws/
+
+# Internal plans and local reference material
+/docs/FLASH_SALE_MICROSERVICES_MIGRATION_PLAN.md
+/docs/plan-black-friday-flash-sale.md
+/docs/superpowers/plans/
+/detai.pdf
+
+# JVM diagnostics
+hs_err_pid*.log
+replay_pid*.log
+*.hprof
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# K6 Load Test Results
-load-test/results/*.json
-load-test/results/*.html
+# Ad hoc k6 exports at the results root
+/load-test/results/*.json
+/load-test/results/*.html
+
+# Pilot metadata and summaries remain available
+/load-test/results/purchase-pilot/*/
+/load-test/results/purchase-matrix/*/console.txt
+/load-test/results/purchase-matrix/*/samples.json.gz
+/load-test/results/purchase-matrix/*/database.json.gz
+
+# Verbose local test reports; keep the Redis lock baseline evidence
+/load-test/results/redis-lock-baseline/ordering-*.xml
+
+# Python bytecode caches
+__pycache__/

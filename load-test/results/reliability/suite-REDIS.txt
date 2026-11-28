@@ -1,0 +1,5 @@
+[WARNING] Tests run: 17, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 43.82 s -- in com.hthien.inventory.integration.ReservationIntegrationTest
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS
+[INFO] Total time:  45.725 s
+[INFO] Finished at: 2026-11-24T21:25:21+07:00

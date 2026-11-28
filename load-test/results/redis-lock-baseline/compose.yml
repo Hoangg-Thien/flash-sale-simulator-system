@@ -1,0 +1,46 @@
+# Isolated, single-instance Phase 0 benchmark. Build the JAR first.
+services:
+  postgres:
+    image: postgres:17.9
+    cpus: 2
+    mem_limit: 1g
+    environment:
+      POSTGRES_DB: flashsale
+      POSTGRES_USER: benchmark
+      POSTGRES_PASSWORD: benchmark
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U benchmark -d flashsale"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    cpus: 1
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  app:
+    image: eclipse-temurin:21-jre-alpine
+    cpus: 2
+    mem_limit: 1g
+    ports:
+      - "127.0.0.1:18080:8080"
+    volumes:
+      - ../../../target/flash-sale-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    working_dir: /app
+    command: ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_USERNAME: benchmark
+      DB_PASSWORD: benchmark
+      SPRING_JPA_SHOW_SQL: "false"
+      LOGGING_LEVEL_ROOT: WARN
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: WARN
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy

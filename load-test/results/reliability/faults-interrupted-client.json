@@ -1,0 +1,18 @@
+{
+  "inventory_kill": {
+    "node": "inventory-b",
+    "order": 1,
+    "before": [
+      "PENDING",
+      false,
+      "RESERVED"
+    ],
+    "after": [
+      "CONFIRMED",
+      false,
+      "RESERVED"
+    ]
+  },
+  "passed": false,
+  "error": "AttributeError(\"'function' object has no attribute 'client'\")"
+}

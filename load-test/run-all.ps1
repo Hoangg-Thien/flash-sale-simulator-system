@@ -27,19 +27,22 @@ if (!(Test-Path $RESULTS_DIR)) {
     New-Item -ItemType Directory -Path $RESULTS_DIR | Out-Null
 }
 
-Write-Host "`nStep 1/5: Smoke test..." -ForegroundColor Yellow
+Write-Host "`nStep 1/6: Smoke test..." -ForegroundColor Yellow
 k6 run --env BASE_URL="$BASE_URL" --out json="$RESULTS_DIR/smoke_$TIMESTAMP.json" load-test/smoke-test.js
 
-Write-Host "`nStep 2/5: NONE mode (oversell bug demo)..." -ForegroundColor Yellow
+Write-Host "`nStep 2/6: NONE mode (oversell bug demo)..." -ForegroundColor Yellow
 k6 run --env BASE_URL="$BASE_URL" --out json="$RESULTS_DIR/none_$TIMESTAMP.json" load-test/purchase-none.js
 
-Write-Host "`nStep 3/5: PESSIMISTIC mode..." -ForegroundColor Yellow
+Write-Host "`nStep 3/6: PESSIMISTIC mode..." -ForegroundColor Yellow
 k6 run --env BASE_URL="$BASE_URL" --out json="$RESULTS_DIR/pessimistic_$TIMESTAMP.json" load-test/purchase-pessimistic.js
 
-Write-Host "`nStep 4/5: REDIS mode (main solution)..." -ForegroundColor Yellow
+Write-Host "`nStep 4/6: REDIS mode (main solution)..." -ForegroundColor Yellow
 k6 run --env BASE_URL="$BASE_URL" --out json="$RESULTS_DIR/redis_$TIMESTAMP.json" load-test/purchase-redis.js
 
-Write-Host "`nStep 5/5: Comparison (all 4 modes)..." -ForegroundColor Yellow
+Write-Host "`nStep 5/6: ATOMIC mode..." -ForegroundColor Yellow
+k6 run --env BASE_URL="$BASE_URL" --out json="$RESULTS_DIR/atomic_$TIMESTAMP.json" load-test/purchase-atomic.js
+
+Write-Host "`nStep 6/6: Comparison (all 5 modes)..." -ForegroundColor Yellow
 k6 run --env BASE_URL="$BASE_URL" --out json="$RESULTS_DIR/comparison_$TIMESTAMP.json" load-test/comparison.js
 
 Write-Host "`n========================================" -ForegroundColor Green

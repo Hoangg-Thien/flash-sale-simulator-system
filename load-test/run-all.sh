@@ -23,23 +23,26 @@ echo " App is healthy"
 mkdir -p "$RESULTS_DIR"
 
 echo ""
-echo "📋 Step 1/5: Smoke test..."
+echo "📋 Step 1/6: Smoke test..."
 k6 run --env BASE_URL="$BASE_URL" --out json="$RESULTS_DIR/smoke_$TIMESTAMP.json" load-test/smoke-test.js
 
 echo ""
-echo "📋 Step 2/5: NONE mode (oversell bug demo)..."
+echo "📋 Step 2/6: NONE mode (oversell bug demo)..."
 k6 run --env BASE_URL="$BASE_URL" --out json="$RESULTS_DIR/none_$TIMESTAMP.json" load-test/purchase-none.js
 
 echo ""
-echo "📋 Step 3/5: PESSIMISTIC mode..."
+echo "📋 Step 3/6: PESSIMISTIC mode..."
 k6 run --env BASE_URL="$BASE_URL" --out json="$RESULTS_DIR/pessimistic_$TIMESTAMP.json" load-test/purchase-pessimistic.js
 
 echo ""
-echo "📋 Step 4/5: REDIS mode (main solution)..."
+echo "📋 Step 4/6: REDIS mode (main solution)..."
 k6 run --env BASE_URL="$BASE_URL" --out json="$RESULTS_DIR/redis_$TIMESTAMP.json" load-test/purchase-redis.js
 
+echo "Step 5/6: ATOMIC mode..."
+k6 run --env BASE_URL="$BASE_URL" --out json="$RESULTS_DIR/atomic_$TIMESTAMP.json" load-test/purchase-atomic.js
+
 echo ""
-echo "📋 Step 5/5: Comparison (all 4 modes)..."
+echo "📋 Step 6/6: Comparison (all 5 modes)..."
 k6 run --env BASE_URL="$BASE_URL" --out json="$RESULTS_DIR/comparison_$TIMESTAMP.json" load-test/comparison.js
 
 echo ""

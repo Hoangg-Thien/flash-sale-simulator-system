@@ -1,0 +1,40 @@
+-------------------------------------------------------------------------------
+Test set: com.hthien.flash_sale.FlashSaleApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.014 s -- in com.hthien.flash_sale.FlashSaleApplicationTests
+-------------------------------------------------------------------------------
+Test set: com.hthien.flash_sale.integration.ConcurrencyIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 15.67 s -- in com.hthien.flash_sale.integration.ConcurrencyIntegrationTest
+-------------------------------------------------------------------------------
+Test set: com.hthien.flash_sale.integration.OrderServiceIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.577 s -- in com.hthien.flash_sale.integration.OrderServiceIntegrationTest
+-------------------------------------------------------------------------------
+Test set: com.hthien.flash_sale.integration.ProductRepositoryIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.536 s -- in com.hthien.flash_sale.integration.ProductRepositoryIntegrationTest
+-------------------------------------------------------------------------------
+Test set: com.hthien.flash_sale.integration.RedisFailureIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.515 s -- in com.hthien.flash_sale.integration.RedisFailureIntegrationTest
+-------------------------------------------------------------------------------
+Test set: com.hthien.flash_sale.integration.RedisLockTransactionIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.431 s -- in com.hthien.flash_sale.integration.RedisLockTransactionIntegrationTest
+-------------------------------------------------------------------------------
+Test set: com.hthien.flash_sale.integration.SimulationComparisonIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.778 s -- in com.hthien.flash_sale.integration.SimulationComparisonIntegrationTest
+-------------------------------------------------------------------------------
+Test set: com.hthien.flash_sale.integration.SimulationServiceIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.540 s -- in com.hthien.flash_sale.integration.SimulationServiceIntegrationTest
+-------------------------------------------------------------------------------
+Test set: com.hthien.flash_sale.integration.TransactionRollbackIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.582 s -- in com.hthien.flash_sale.integration.TransactionRollbackIntegrationTest
+-------------------------------------------------------------------------------
+Test set: com.hthien.flash_sale.unit.LockStrategyUnitTest
+-------------------------------------------------------------------------------
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.295 s -- in com.hthien.flash_sale.unit.LockStrategyUnitTest

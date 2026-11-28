@@ -1,0 +1,711 @@
+{
+  "inventory_kill": {
+    "node": "inventory-a",
+    "order": 1,
+    "before": [
+      "PENDING",
+      false,
+      "RESERVED"
+    ],
+    "after": [
+      "CONFIRMED",
+      false,
+      "RESERVED"
+    ]
+  },
+  "order_kill": {
+    "node": "inventory-a",
+    "order": 2,
+    "before": [
+      "PENDING",
+      false,
+      "RESERVED"
+    ],
+    "after": [
+      "CONFIRMED",
+      false,
+      "RESERVED"
+    ]
+  },
+  "lost_release": {
+    "order": 3,
+    "before": [
+      "PENDING",
+      true,
+      "RELEASED"
+    ],
+    "after": [
+      "REJECTED",
+      true,
+      "RELEASED"
+    ]
+  },
+  "backlog": {
+    "samples": [
+      {
+        "n": 96,
+        "oldest_s": 5.624341
+      },
+      {
+        "n": 96,
+        "oldest_s": 7.791345
+      },
+      {
+        "n": 96,
+        "oldest_s": 9.955678
+      },
+      {
+        "n": 96,
+        "oldest_s": 12.118684
+      },
+      {
+        "n": 96,
+        "oldest_s": 12.600554
+      },
+      {
+        "n": 96,
+        "oldest_s": 13.039332
+      },
+      {
+        "n": 96,
+        "oldest_s": 13.538654
+      },
+      {
+        "n": 96,
+        "oldest_s": 14.033838
+      },
+      {
+        "n": 96,
+        "oldest_s": 14.552393
+      },
+      {
+        "n": 96,
+        "oldest_s": 15.162831
+      },
+      {
+        "n": 96,
+        "oldest_s": 15.709848
+      },
+      {
+        "n": 96,
+        "oldest_s": 16.243662
+      },
+      {
+        "n": 96,
+        "oldest_s": 16.738904
+      },
+      {
+        "n": 96,
+        "oldest_s": 17.220312
+      },
+      {
+        "n": 96,
+        "oldest_s": 17.752745
+      },
+      {
+        "n": 96,
+        "oldest_s": 18.279548
+      },
+      {
+        "n": 96,
+        "oldest_s": 18.79966
+      },
+      {
+        "n": 96,
+        "oldest_s": 19.396052
+      },
+      {
+        "n": 96,
+        "oldest_s": 19.956821
+      },
+      {
+        "n": 96,
+        "oldest_s": 20.487401
+      },
+      {
+        "n": 96,
+        "oldest_s": 21.045023
+      },
+      {
+        "n": 96,
+        "oldest_s": 21.511167
+      },
+      {
+        "n": 96,
+        "oldest_s": 21.917296
+      },
+      {
+        "n": 96,
+        "oldest_s": 22.295383
+      },
+      {
+        "n": 96,
+        "oldest_s": 22.702432
+      },
+      {
+        "n": 96,
+        "oldest_s": 23.182952
+      },
+      {
+        "n": 96,
+        "oldest_s": 23.590047
+      },
+      {
+        "n": 96,
+        "oldest_s": 23.98603
+      },
+      {
+        "n": 96,
+        "oldest_s": 24.400651
+      },
+      {
+        "n": 84,
+        "oldest_s": 24.811073
+      },
+      {
+        "n": 64,
+        "oldest_s": 25.183935
+      },
+      {
+        "n": 64,
+        "oldest_s": 25.549575
+      },
+      {
+        "n": 64,
+        "oldest_s": 25.918187
+      },
+      {
+        "n": 52,
+        "oldest_s": 26.296823
+      },
+      {
+        "n": 32,
+        "oldest_s": 26.672981
+      },
+      {
+        "n": 32,
+        "oldest_s": 27.041567
+      },
+      {
+        "n": 32,
+        "oldest_s": 27.412745
+      },
+      {
+        "n": 16,
+        "oldest_s": 27.796949
+      },
+      {
+        "n": 0,
+        "oldest_s": null
+      }
+    ],
+    "orders": [
+      {
+        "id": 4,
+        "order_status": "CONFIRMED",
+        "age_s": 27.594166
+      },
+      {
+        "id": 5,
+        "order_status": "CONFIRMED",
+        "age_s": 24.702264
+      },
+      {
+        "id": 6,
+        "order_status": "CONFIRMED",
+        "age_s": 27.632334
+      },
+      {
+        "id": 7,
+        "order_status": "CONFIRMED",
+        "age_s": 26.137386
+      },
+      {
+        "id": 8,
+        "order_status": "CONFIRMED",
+        "age_s": 26.149842
+      },
+      {
+        "id": 9,
+        "order_status": "CONFIRMED",
+        "age_s": 25.00408
+      },
+      {
+        "id": 10,
+        "order_status": "CONFIRMED",
+        "age_s": 26.381307
+      },
+      {
+        "id": 11,
+        "order_status": "CONFIRMED",
+        "age_s": 25.030316
+      },
+      {
+        "id": 12,
+        "order_status": "CONFIRMED",
+        "age_s": 25.016706
+      },
+      {
+        "id": 13,
+        "order_status": "CONFIRMED",
+        "age_s": 27.865693
+      },
+      {
+        "id": 14,
+        "order_status": "CONFIRMED",
+        "age_s": 25.057416
+      },
+      {
+        "id": 15,
+        "order_status": "CONFIRMED",
+        "age_s": 25.031061
+      },
+      {
+        "id": 16,
+        "order_status": "CONFIRMED",
+        "age_s": 25.044113
+      },
+      {
+        "id": 17,
+        "order_status": "CONFIRMED",
+        "age_s": 25.10372
+      },
+      {
+        "id": 18,
+        "order_status": "CONFIRMED",
+        "age_s": 25.087951
+      },
+      {
+        "id": 19,
+        "order_status": "CONFIRMED",
+        "age_s": 25.071686
+      },
+      {
+        "id": 20,
+        "order_status": "CONFIRMED",
+        "age_s": 21.03046
+      },
+      {
+        "id": 21,
+        "order_status": "CONFIRMED",
+        "age_s": 21.01807
+      },
+      {
+        "id": 22,
+        "order_status": "CONFIRMED",
+        "age_s": 21.059083
+      },
+      {
+        "id": 23,
+        "order_status": "CONFIRMED",
+        "age_s": 21.072943
+      },
+      {
+        "id": 24,
+        "order_status": "CONFIRMED",
+        "age_s": 21.045416
+      },
+      {
+        "id": 25,
+        "order_status": "CONFIRMED",
+        "age_s": 21.085518
+      },
+      {
+        "id": 26,
+        "order_status": "CONFIRMED",
+        "age_s": 21.099055
+      },
+      {
+        "id": 27,
+        "order_status": "CONFIRMED",
+        "age_s": 21.137527
+      },
+      {
+        "id": 28,
+        "order_status": "CONFIRMED",
+        "age_s": 21.123985
+      },
+      {
+        "id": 29,
+        "order_status": "CONFIRMED",
+        "age_s": 21.151448
+      },
+      {
+        "id": 30,
+        "order_status": "CONFIRMED",
+        "age_s": 21.110783
+      },
+      {
+        "id": 31,
+        "order_status": "CONFIRMED",
+        "age_s": 21.165189
+      },
+      {
+        "id": 32,
+        "order_status": "CONFIRMED",
+        "age_s": 21.178358
+      },
+      {
+        "id": 33,
+        "order_status": "CONFIRMED",
+        "age_s": 21.202437
+      },
+      {
+        "id": 34,
+        "order_status": "CONFIRMED",
+        "age_s": 21.214326
+      },
+      {
+        "id": 35,
+        "order_status": "CONFIRMED",
+        "age_s": 21.189986
+      },
+      {
+        "id": 36,
+        "order_status": "CONFIRMED",
+        "age_s": 21.187817
+      },
+      {
+        "id": 37,
+        "order_status": "CONFIRMED",
+        "age_s": 21.174191
+      },
+      {
+        "id": 38,
+        "order_status": "CONFIRMED",
+        "age_s": 21.199571
+      },
+      {
+        "id": 39,
+        "order_status": "CONFIRMED",
+        "age_s": 21.225377
+      },
+      {
+        "id": 40,
+        "order_status": "CONFIRMED",
+        "age_s": 21.212717
+      },
+      {
+        "id": 41,
+        "order_status": "CONFIRMED",
+        "age_s": 21.23718
+      },
+      {
+        "id": 42,
+        "order_status": "CONFIRMED",
+        "age_s": 21.262288
+      },
+      {
+        "id": 43,
+        "order_status": "CONFIRMED",
+        "age_s": 21.275398
+      },
+      {
+        "id": 44,
+        "order_status": "CONFIRMED",
+        "age_s": 21.249537
+      },
+      {
+        "id": 45,
+        "order_status": "CONFIRMED",
+        "age_s": 21.316646
+      },
+      {
+        "id": 46,
+        "order_status": "CONFIRMED",
+        "age_s": 21.301561
+      },
+      {
+        "id": 47,
+        "order_status": "CONFIRMED",
+        "age_s": 21.287142
+      },
+      {
+        "id": 48,
+        "order_status": "CONFIRMED",
+        "age_s": 21.336281
+      },
+      {
+        "id": 49,
+        "order_status": "CONFIRMED",
+        "age_s": 22.350296
+      },
+      {
+        "id": 50,
+        "order_status": "CONFIRMED",
+        "age_s": 22.375453
+      },
+      {
+        "id": 51,
+        "order_status": "CONFIRMED",
+        "age_s": 22.386118
+      },
+      {
+        "id": 52,
+        "order_status": "CONFIRMED",
+        "age_s": 22.350618
+      },
+      {
+        "id": 53,
+        "order_status": "CONFIRMED",
+        "age_s": 22.361492
+      },
+      {
+        "id": 54,
+        "order_status": "CONFIRMED",
+        "age_s": 22.388573
+      },
+      {
+        "id": 55,
+        "order_status": "CONFIRMED",
+        "age_s": 22.371876
+      },
+      {
+        "id": 56,
+        "order_status": "CONFIRMED",
+        "age_s": 22.401801
+      },
+      {
+        "id": 57,
+        "order_status": "CONFIRMED",
+        "age_s": 22.415682
+      },
+      {
+        "id": 58,
+        "order_status": "CONFIRMED",
+        "age_s": 22.427667
+      },
+      {
+        "id": 59,
+        "order_status": "CONFIRMED",
+        "age_s": 22.442183
+      },
+      {
+        "id": 60,
+        "order_status": "CONFIRMED",
+        "age_s": 22.455061
+      },
+      {
+        "id": 61,
+        "order_status": "CONFIRMED",
+        "age_s": 22.467053
+      },
+      {
+        "id": 62,
+        "order_status": "CONFIRMED",
+        "age_s": 22.490937
+      },
+      {
+        "id": 63,
+        "order_status": "CONFIRMED",
+        "age_s": 22.478811
+      },
+      {
+        "id": 64,
+        "order_status": "CONFIRMED",
+        "age_s": 22.503329
+      },
+      {
+        "id": 65,
+        "order_status": "CONFIRMED",
+        "age_s": 22.516179
+      },
+      {
+        "id": 66,
+        "order_status": "CONFIRMED",
+        "age_s": 22.529383
+      },
+      {
+        "id": 67,
+        "order_status": "CONFIRMED",
+        "age_s": 22.540967
+      },
+      {
+        "id": 68,
+        "order_status": "CONFIRMED",
+        "age_s": 22.515261
+      },
+      {
+        "id": 69,
+        "order_status": "CONFIRMED",
+        "age_s": 22.535516
+      },
+      {
+        "id": 70,
+        "order_status": "CONFIRMED",
+        "age_s": 22.523826
+      },
+      {
+        "id": 71,
+        "order_status": "CONFIRMED",
+        "age_s": 22.542431
+      },
+      {
+        "id": 72,
+        "order_status": "CONFIRMED",
+        "age_s": 22.564866
+      },
+      {
+        "id": 73,
+        "order_status": "CONFIRMED",
+        "age_s": 22.554221
+      },
+      {
+        "id": 74,
+        "order_status": "CONFIRMED",
+        "age_s": 22.575678
+      },
+      {
+        "id": 75,
+        "order_status": "CONFIRMED",
+        "age_s": 22.589101
+      },
+      {
+        "id": 76,
+        "order_status": "CONFIRMED",
+        "age_s": 22.600692
+      },
+      {
+        "id": 77,
+        "order_status": "CONFIRMED",
+        "age_s": 22.614938
+      },
+      {
+        "id": 78,
+        "order_status": "CONFIRMED",
+        "age_s": 19.214802
+      },
+      {
+        "id": 79,
+        "order_status": "CONFIRMED",
+        "age_s": 19.19703
+      },
+      {
+        "id": 80,
+        "order_status": "CONFIRMED",
+        "age_s": 19.232594
+      },
+      {
+        "id": 81,
+        "order_status": "CONFIRMED",
+        "age_s": 19.250042
+      },
+      {
+        "id": 82,
+        "order_status": "CONFIRMED",
+        "age_s": 19.293298
+      },
+      {
+        "id": 83,
+        "order_status": "CONFIRMED",
+        "age_s": 19.269134
+      },
+      {
+        "id": 84,
+        "order_status": "CONFIRMED",
+        "age_s": 19.29561
+      },
+      {
+        "id": 85,
+        "order_status": "CONFIRMED",
+        "age_s": 19.319382
+      },
+      {
+        "id": 86,
+        "order_status": "CONFIRMED",
+        "age_s": 19.340778
+      },
+      {
+        "id": 87,
+        "order_status": "CONFIRMED",
+        "age_s": 19.405771
+      },
+      {
+        "id": 88,
+        "order_status": "CONFIRMED",
+        "age_s": 19.354135
+      },
+      {
+        "id": 89,
+        "order_status": "CONFIRMED",
+        "age_s": 19.371625
+      },
+      {
+        "id": 90,
+        "order_status": "CONFIRMED",
+        "age_s": 19.389283
+      },
+      {
+        "id": 91,
+        "order_status": "CONFIRMED",
+        "age_s": 19.414931
+      },
+      {
+        "id": 92,
+        "order_status": "CONFIRMED",
+        "age_s": 19.431301
+      },
+      {
+        "id": 93,
+        "order_status": "CONFIRMED",
+        "age_s": 19.444558
+      },
+      {
+        "id": 94,
+        "order_status": "CONFIRMED",
+        "age_s": 19.460673
+      },
+      {
+        "id": 95,
+        "order_status": "CONFIRMED",
+        "age_s": 19.525279
+      },
+      {
+        "id": 96,
+        "order_status": "CONFIRMED",
+        "age_s": 19.509662
+      },
+      {
+        "id": 97,
+        "order_status": "CONFIRMED",
+        "age_s": 19.47612
+      },
+      {
+        "id": 98,
+        "order_status": "CONFIRMED",
+        "age_s": 19.493601
+      },
+      {
+        "id": 99,
+        "order_status": "CONFIRMED",
+        "age_s": 19.539324
+      }
+    ],
+    "age_limit_s": 90
+  },
+  "verification": {
+    "orders": {
+      "CONFIRMED": 98,
+      "REJECTED": 1
+    },
+    "reservations": {
+      "RESERVED": 98,
+      "RELEASED": 1
+    },
+    "pending_ids": [],
+    "historical_count": 0,
+    "stock": {
+      "1": 52
+    },
+    "issues": []
+  },
+  "stock_rows": [
+    {
+      "product_id": 1,
+      "stock": 52,
+      "version": 100,
+      "initial_stock": 150
+    }
+  ],
+  "passed": true
+}

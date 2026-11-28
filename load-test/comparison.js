@@ -1,5 +1,5 @@
 /**
- * COMPARISON TEST — chạy tuần tự 4 mode với cùng config, in bảng so sánh.
+ * COMPARISON TEST — chạy tuần tự 5 mode với cùng config, in bảng so sánh.
  *
  * Chạy: k6 run load-test/comparison.js --out json=load-test/results/comparison.json
  */
@@ -50,6 +50,13 @@ export const options = {
             env: { LOCK_MODE: 'REDIS' },
             tags: { mode: 'redis' },
         },
+        atomic_mode: {
+            executor: 'ramping-vus',
+            startTime: '100s',
+            stages: buildStages(CONCURRENT_VUS, DURATION_EACH),
+            env: { LOCK_MODE: 'ATOMIC' },
+            tags: { mode: 'atomic' },
+        },
     },
     thresholds: {
         'http_req_failed': ['rate<0.01'],
@@ -58,7 +65,7 @@ export const options = {
 
 export function setup() {
     const products = {};
-    for (const mode of ['NONE', 'OPTIMISTIC', 'PESSIMISTIC', 'REDIS']) {
+    for (const mode of ['NONE', 'OPTIMISTIC', 'PESSIMISTIC', 'REDIS', 'ATOMIC']) {
         const id = createProduct(`${mode} Comparison Item`, 999000, INITIAL_STOCK);
         resetStock(id, INITIAL_STOCK);
         products[mode] = id;

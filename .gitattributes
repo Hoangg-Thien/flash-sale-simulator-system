@@ -1,2 +1,11 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
+
+# Preserve recorded benchmark bytes so SHA-256 checksums survive checkout.
+/load-test/results/**/comparison-* -text
+/load-test/results/**/purchase-atomic* -text
+/load-test/results/**/*-stock.csv whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/load-test/results/multi-instance-proof/**/round-* -text
+/load-test/results/multi-instance-proof/**/warmup-* -text
+/load-test/results/multi-instance-proof/**/requests-*.txt -text
+/load-test/results/multi-instance-proof/**/comparison.csv -text

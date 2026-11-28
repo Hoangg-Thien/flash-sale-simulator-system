@@ -1,0 +1,4 @@
+/flashsale-multi-proof-app-a-1 image=sha256:2005caebc99ca3ecb87c8522cbc559cd348718dd5371c3d2fdc7bca678e26406 cpus=2000000000 memory=1073741824
+/flashsale-multi-proof-app-b-1 image=sha256:2005caebc99ca3ecb87c8522cbc559cd348718dd5371c3d2fdc7bca678e26406 cpus=2000000000 memory=1073741824
+/flashsale-multi-proof-postgres-1 image=sha256:b994732fcf33f73776c65d3a5bf1f80c00120ba5007e8ab90307b1a743c1fc16 cpus=2000000000 memory=1073741824
+/flashsale-multi-proof-redis-1 image=sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf cpus=1000000000 memory=268435456

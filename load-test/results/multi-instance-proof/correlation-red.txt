@@ -1,0 +1,8 @@
+[ERROR]   RequestCorrelationIntegrationTest.incomingId_isReturnedInErrorAndLogs_thenMdcIsCleared:46 Response header 'X-Request-Id' expected:<purchase-123> but was:<null>
+  ["null:null", "null:null"]
+and elements not expected:
+  ["null:null", "null:null"]
+Expecting not blank but was: null
+Expecting not blank but was: null
+Expecting not blank but was: null
+[ERROR] Tests run: 6, Failures: 6, Errors: 0, Skipped: 0

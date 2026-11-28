@@ -1,66 +1,50 @@
+include:
+  - docker-compose.inventory.yml
+
 services:
-  postgres:
+  order-postgres:
     image: postgres:17.9
-    container_name: flashsale-db
     environment:
-      POSTGRES_DB: flashsale
-      POSTGRES_USER: ${DB_USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-    ports:
-      - "5435:5432"
+      POSTGRES_DB: order_db
+      POSTGRES_USER: ${DB_USERNAME:-orders}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-orders}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - order_data:/var/lib/postgresql/data
+    networks: [order-db]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d flashsale"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    container_name: flash-sale-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d order_db"]
+      interval: 3s
       timeout: 3s
-      retries: 3
-      start_period: 5s
-    restart: unless-stopped
+      retries: 15
 
-  app:
+  order-service:
+    image: flash-sale-order:local
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: flash-sale-app
+      args:
+        SERVICE: order-service
     ports:
-      - "8080:8080"
+      - "127.0.0.1:${ORDER_PORT:-8080}:8080"
+    networks: [order-db, default]
     environment:
-      SPRING_PROFILES_ACTIVE: docker
-      DB_USERNAME: ${DB_USERNAME:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      SPRING_PROFILES_ACTIVE: ${ORDER_PROFILES:-docker}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://order-postgres:5432/order_db
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-orders}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-orders}
+      INVENTORY_BASE_URLS: http://inventory-a:8081,http://inventory-b:8081
+      INVENTORY_LOCK_MODE: ${INVENTORY_LOCK_MODE:-ATOMIC}
     depends_on:
-      postgres:
+      order-postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: on-failure
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+networks:
+  order-db:
+    internal: true
 
 volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
+  order_data:
