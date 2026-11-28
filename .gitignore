@@ -35,12 +35,16 @@ build/
 # Logs
 *.log
 
-# Env
+# Local environment and AWS CLI credentials
 .env
 .env.*
 !.env.example
+/.aws/
 
-# Local reference document
+# Internal plans and local reference material
+/docs/FLASH_SALE_MICROSERVICES_MIGRATION_PLAN.md
+/docs/plan-black-friday-flash-sale.md
+/docs/superpowers/plans/
 /detai.pdf
 
 # JVM diagnostics

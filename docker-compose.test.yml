@@ -1,6 +1,7 @@
-# Chạy trong CI để test với real services (không dùng Testcontainers)
-# Dùng: docker compose -f docker-compose.test.yml up -d
-# Sau đó: mvn test -Dspring.profiles.active=ci
+# PostgreSQL và Redis tạm thời để thử nghiệm thủ công trên máy cục bộ.
+# Maven và CI khởi động các dependency kiểm thử bằng Testcontainers.
+# docker compose -f docker-compose.test.yml up -d
+# docker compose -f docker-compose.test.yml down
 
 services:
   postgres-test:

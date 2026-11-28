@@ -1,6 +1,6 @@
 # Kiểm chứng tự động nhiều phiên ứng dụng
 
-Hai tiến trình Spring Boot độc lập cùng dùng PostgreSQL và Redis. Không có dịch vụ mới hoặc API Gateway.
+Tài liệu lịch sử cho mốc `monolith-v1` (`3ae96ef`). Ở mốc này, hai tiến trình Spring Boot dùng chung PostgreSQL và Redis. Chạy các lệnh dưới đây từ checkout của tag. Xem kiến trúc và lệnh khởi động hiện tại trong [README](README.md).
 
 ## Kiểm thử hồi quy bằng hai JVM thật
 
@@ -9,7 +9,7 @@ Cần JDK 21 và Docker Desktop:
 ```powershell
 .\mvnw.cmd clean package
 # Hoặc chạy riêng nhóm nhiều JVM và requestId/MDC:
-.\mvnw.cmd -pl services/order-service '-Dtest=MultiInstanceIntegrationTest,RequestCorrelationIntegrationTest' test
+.\mvnw.cmd '-Dtest=MultiInstanceIntegrationTest,RequestCorrelationIntegrationTest' test
 ```
 
 Kiểm thử khởi động hai JVM với hai cổng ngẫu nhiên, dùng chung PostgreSQL/Redis qua Testcontainers. Mỗi đợt có 20 người mua bắt đầu đồng thời, chia 10 yêu cầu cho mỗi JVM. Kết quả được đối chiếu với số đơn, khóa idempotency, tổng số lượng mua và tồn kho trong DB; cả hai API phải trả cùng tồn kho đã lưu. NONE là trường hợp riêng, dùng sản phẩm riêng để tái hiện mất cập nhật.
@@ -41,4 +41,4 @@ Root `docker-compose.yml` chạy `app-a` ở 8080 và `app-b` ở 8081. Mỗi ph
 
 Các phản hồi lỗi dạng `ErrorResponse` có thêm `requestId`; các mã HTTP và trường cũ được giữ nguyên. Log có `instanceId`/`requestId`, MDC được dọn sau request và được truyền sang worker mô phỏng.
 
-Workflow load-test chỉ kích hoạt thủ công; chọn `multi-instance` để chạy bốn chế độ an toàn và đối chiếu DB. Không đưa k6 vào pipeline pull request.
+Workflow load-test chạy thủ công từ tag `monolith-v1`. Chọn `multi-instance` để chạy bốn chế độ an toàn và đối chiếu DB. Không đưa k6 vào pipeline pull request.

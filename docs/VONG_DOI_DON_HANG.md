@@ -21,6 +21,95 @@ Trước khi gọi release, tác vụ **ghi và xác nhận** cờ `cancel_reque
 
 Cờ hủy, thời điểm thử tiếp và dữ liệu yêu cầu đều nằm trong PostgreSQL. Sau khi tiến trình khởi động lại, tác vụ tiếp tục theo cờ đã lưu. Hết thời gian chờ, mất kết nối, dữ liệu trả về sai hoặc phản hồi hủy không rõ kết quả đều để đơn ở `PENDING`. Nếu dịch vụ mất kết nối lâu, đơn có thể chờ lâu hơn ngưỡng hủy.
 
+## Sơ đồ tuần tự
+
+### Mua hàng thành công
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant O as Order Service
+    participant OD as order_db
+    participant I as Inventory Service
+    participant ID as inventory_db
+    C->>O: POST /api/v1/orders với Idempotency-Key
+    O->>OD: Ghi PENDING và chụp giá trong một giao dịch
+    OD-->>O: Commit và trả orderId
+    O->>I: POST /internal/v1/reservations với orderId
+    I->>ID: Ghi reservation và trừ kho trong một giao dịch
+    ID-->>I: Commit
+    I-->>O: 200 RESERVED
+    O->>OD: Chuyển CONFIRMED nếu vẫn PENDING và cancel_requested=false
+    OD-->>O: Commit
+    O->>OD: Đọc trạng thái đã lưu
+    O-->>C: 201 CONFIRMED
+    C->>O: Gửi lại cùng khóa và payload
+    O->>OD: Đọc đơn hiện có
+    O-->>C: 200 CONFIRMED với cùng orderId
+```
+
+### Hết timeout sau khi Inventory đã commit
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant O as Order Service
+    participant OD as order_db
+    participant I as Inventory Service
+    participant ID as inventory_db
+    C->>O: POST /api/v1/orders
+    O->>OD: Commit PENDING và dòng hàng
+    O->>I: Gửi reserve với orderId
+    I->>ID: Commit RESERVED và trừ kho
+    Note over O,I: Phản hồi bị mất
+    loop Tối đa hai retry mặc định
+        O->>I: Gửi lại reserve với cùng orderId
+        Note over O,I: Trong kịch bản này tất cả lần thử đều hết timeout
+    end
+    O-->>C: 202 PENDING
+    Note over O,OD: Bộ đối soát chọn đơn đến lượt và chưa đến hạn hủy
+    O->>OD: Chốt thời điểm thử tiếp khi đơn vẫn PENDING
+    O->>I: GET /internal/v1/reservations/{orderId}
+    I->>ID: Đọc reservation
+    I-->>O: 200 RESERVED
+    O->>OD: Commit CONFIRMED khi cờ hủy còn tắt
+    C->>O: GET /api/v1/orders/{id}
+    O-->>C: 200 CONFIRMED
+```
+
+Nếu GET reservation trả `404` trước hạn hủy, Order gửi lại reserve với cùng mã đơn và payload. Nếu kết quả vẫn chưa rõ, đơn tiếp tục chờ lượt đối soát sau.
+
+### Hủy và bù trừ khi đến hạn
+
+```mermaid
+sequenceDiagram
+    participant O as Order Service
+    participant OD as order_db
+    participant I as Inventory Service
+    participant ID as inventory_db
+    O->>OD: Ghi cancel_requested=true nếu đơn còn PENDING và đến lượt
+    alt Xác nhận đơn đã thắng
+        OD-->>O: Không có dòng PENDING đủ điều kiện
+    else Ghi ý định hủy thành công
+        OD-->>O: Commit ý định hủy
+        Note over O,OD: Phản hồi RESERVED đến muộn không thể ghi CONFIRMED
+        O->>I: POST /internal/v1/reservations/{orderId}/release
+        alt Reservation còn RESERVED
+            I->>ID: Hoàn kho một lần và commit RELEASED
+        else Reserve chưa đến
+            I->>ID: Commit dấu hủy RELEASED
+        else Reservation đã kết thúc
+            I->>ID: Đọc RELEASED hoặc REJECTED
+        end
+        alt Nhận kết quả RELEASED hoặc REJECTED hợp lệ
+            I-->>O: 200 với trạng thái cuối
+            O->>OD: Commit REJECTED với điều kiện cancel_requested=true
+        else Timeout hoặc phản hồi không hợp lệ
+            Note over O,OD: Giữ PENDING và cờ hủy để thử release lại
+        end
+    end
+```
+
 ## Cấu hình
 
 | Thuộc tính Spring | Mặc định | Ý nghĩa |

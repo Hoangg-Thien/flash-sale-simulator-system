@@ -93,4 +93,4 @@ docker compose -p inventory-local -f docker-compose.inventory.yml down
 
 ## Giới hạn vận hành
 
-Dịch vụ giữ bản ghi giữ hàng và bản ghi hủy vô thời hạn để xử lý yêu cầu gửi lại. Order Service đối soát các đơn đang chờ qua API giữ hàng. Đặt lại tồn kho dành cho mô phỏng vì thao tác này thay đổi số lượng khả dụng độc lập với giao dịch mua hàng. Bộ kiểm thử tích hợp đã kiểm tra tranh chấp đồng thời và hoàn tác giao dịch. Xem cách đối soát khi mất phản hồi và khởi động lại Order trong [Vòng đời đơn hàng](VONG_DOI_DON_HANG.md).
+Dịch vụ giữ bản ghi giữ hàng và bản ghi hủy vô thời hạn để xử lý yêu cầu gửi lại. Order Service đối soát các đơn đang chờ qua API giữ hàng. Đặt lại tồn kho dành cho mô phỏng vì thao tác này thay đổi số lượng khả dụng độc lập với giao dịch mua hàng. Bộ kiểm thử tích hợp đã kiểm tra tranh chấp đồng thời và hoàn tác giao dịch. Đã thử dừng tiến trình sau commit và trước khi trả phản hồi. Thông lượng đã đo trên một máy Docker. Chuyển đổi dự phòng PostgreSQL vẫn cần kiểm chứng. [Ma trận sự cố](KIEM_THU_DO_TIN_CAY.md) · [Kết quả benchmark](benchmarks/README.md)
